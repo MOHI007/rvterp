@@ -1,0 +1,38 @@
+@import url('https://fonts.googleapis.com/css2?family=Anek+Bangla:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: 'Anek Bangla', sans-serif;
+  background-color: #F9FAFB;
+  color: #1F2937;
+}
+
+@media print {
+  @page {
+    margin: 0;
+    size: 58mm auto;
+  }
+  
+  body * {
+    visibility: hidden;
+  }
+  
+  .print-receipt-container, .print-receipt-container * {
+    visibility: visible;
+  }
+  
+  .print-receipt-container {
+    display: block !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 58mm;
+    margin: 0;
+    padding: 1mm;
+    background-color: white;
+    color: black;
+  }
+}
