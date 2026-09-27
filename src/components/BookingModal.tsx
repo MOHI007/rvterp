@@ -81,8 +81,23 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selecte
         name: finalName,
       }, { onConflict: 'phone_number' });
 
+      // Generate Receipt ID
+      const dateObj = new Date(selectedDate);
+      const yy = dateObj.getFullYear().toString().slice(-2);
+      const mm = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+      const dd = dateObj.getDate().toString().padStart(2, '0');
+      
+      const { count } = await supabase
+        .from('bookings')
+        .select('*', { count: 'exact', head: true })
+        .eq('date', selectedDate);
+        
+      const sequence = ((count || 0) + 1).toString().padStart(2, '0');
+      const receiptId = `${yy}${mm}${dd}${sequence}`;
+
       // 2. Insert Booking (ignoring end time calculation accuracy for this phase)
       const { data: booking, error: bookingError } = await supabase.from('bookings').insert({
+        receipt_id: receiptId,
         date: selectedDate,
         start_time: initialSlot.startTime,
         end_time: initialSlot.endTime, 

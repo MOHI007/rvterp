@@ -10,6 +10,7 @@ export interface Booking {
   date: string;
   start_time: string;
   end_time: string;
+  receipt_id?: string;
   actual_check_in?: string;
   actual_check_out?: string;
   customer_phone: string;
@@ -40,6 +41,7 @@ export interface AppSettings {
     max_discount_per_day: number;
   };
   max_discount_allowed: number;
+  receipt_footer_text?: string;
 }
 
 export const generateDailySlots = (settings?: AppSettings): Slot[] => {

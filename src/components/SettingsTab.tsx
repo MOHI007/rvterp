@@ -11,6 +11,7 @@ export const SettingsTab: React.FC = () => {
   const [nightStartHour, setNightStartHour] = useState(18);
   const [maxDiscountSlot, setMaxDiscountSlot] = useState(100);
   const [maxDiscountDay, setMaxDiscountDay] = useState(500);
+  const [receiptFooterText, setReceiptFooterText] = useState('দয়া করে টার্ফ শু পরিধান করুন।');
   
   const [isSaving, setIsSaving] = useState(false);
 
@@ -21,6 +22,7 @@ export const SettingsTab: React.FC = () => {
       setNightStartHour(settings.dynamic_pricing_rules?.night_start_hour || 18);
       setMaxDiscountSlot(settings.max_discount_allowed || 100);
       setMaxDiscountDay(settings.dynamic_pricing_rules?.max_discount_per_day || 500);
+      if (settings.receipt_footer_text) setReceiptFooterText(settings.receipt_footer_text);
     }
   }, [settings]);
 
@@ -34,7 +36,8 @@ export const SettingsTab: React.FC = () => {
           night_start_hour: nightStartHour,
           max_discount_per_day: maxDiscountDay
         },
-        max_discount_allowed: maxDiscountSlot
+        max_discount_allowed: maxDiscountSlot,
+        receipt_footer_text: receiptFooterText
       };
       
       const { error } = await supabase
@@ -85,6 +88,19 @@ export const SettingsTab: React.FC = () => {
             <label className="block text-xs font-bold text-gray-500 mb-1">সর্বোচ্চ ছাড় (প্রতি দিন)</label>
             <input type="number" value={maxDiscountDay} onChange={e => setMaxDiscountDay(Number(e.target.value))} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-brand-orange font-semibold text-gray-800" />
           </div>
+        </div>
+      </div>
+
+      <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 space-y-4">
+        <h3 className="font-bold text-gray-800 border-b border-gray-100 pb-2">প্রিন্ট রশিদের সেটিংস (Receipt)</h3>
+        <div>
+          <label className="block text-xs font-bold text-gray-500 mb-1">রশিদের নিচের বার্তা (Footer Message)</label>
+          <textarea 
+            value={receiptFooterText} 
+            onChange={e => setReceiptFooterText(e.target.value)} 
+            rows={3}
+            className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-brand-orange font-semibold text-gray-800" 
+          />
         </div>
       </div>
 

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { type Booking } from '../types';
 
@@ -7,6 +8,7 @@ interface ReceiptProps {
 }
 
 export const Receipt: React.FC<ReceiptProps> = ({ booking }) => {
+  const { settings } = useAuth();
   const [dueCollected, setDueCollected] = useState(0);
 
   useEffect(() => {
@@ -37,10 +39,10 @@ export const Receipt: React.FC<ReceiptProps> = ({ booking }) => {
         <p className="font-bold text-xs mt-1 border border-black inline-block px-2 py-0.5 rounded">{title}</p>
       </div>
 
-      <div className="space-y-0.5 text-xs mb-2">
+      <div className="space-y-0.5 text-xs mb-2 mt-3">
         <p><strong>তারিখ:</strong> {new Date(booking.date).toLocaleDateString('bn-BD')}</p>
-        <p><strong>বুকিং আইডি:</strong> #{booking.id.slice(0, 6).toUpperCase()}</p>
-        <p><strong>গ্রাহক:</strong> {booking.customers?.name}</p>
+        <p><strong>বুকিং আইডি:</strong> #{booking.receipt_id || booking.id.slice(0, 6).toUpperCase()}</p>
+        <p><strong>গ্রাহক:</strong> {booking.customers?.name || 'অজানা গ্রাহক'}</p>
         <p><strong>ফোন:</strong> {toBn(booking.customer_phone)}</p>
       </div>
 
@@ -73,9 +75,9 @@ export const Receipt: React.FC<ReceiptProps> = ({ booking }) => {
         </div>
       </div>
 
-      <div className="text-center text-[10px] space-y-1">
+      <div className="text-center text-[10px] space-y-1 mt-4">
         <p className="font-bold">*** ধন্যবাদ ***</p>
-        <p>দয়া করে টার্ফ শু পরিধান করুন।</p>
+        <p className="whitespace-pre-wrap">{settings?.receipt_footer_text || 'দয়া করে টার্ফ শু পরিধান করুন।'}</p>
       </div>
     </div>
   );
