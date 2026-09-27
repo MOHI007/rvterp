@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Lock, Calculator, AlertTriangle, CheckCircle2, DollarSign } from 'lucide-react';
+import { X, Lock, CheckCircle2, DollarSign } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 

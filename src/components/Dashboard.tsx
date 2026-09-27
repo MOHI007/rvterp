@@ -7,7 +7,7 @@ import { BookingModal } from './BookingModal';
 import { ActiveBookingDetails } from './ActiveBookingDetails';
 import { ExpenseModal } from './ExpenseModal';
 import { ShiftCloseModal } from './ShiftCloseModal';
-import { Calendar, ChevronLeft, ChevronRight, LogOut, AlertTriangle, Wallet, Lock } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, LogOut, Wallet, Lock } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
   const { user, logout, activeShiftId, settings } = useAuth();
