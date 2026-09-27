@@ -217,7 +217,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selecte
             </div>
             <div className="flex justify-between text-gray-800 text-lg border-b border-gray-200 pb-2">
               <span>মোট বিল:</span>
-              <span>৳{toBn(totalAmount)}</span>
+              <span>৳{toBn(netAmount)}</span>
             </div>
 
             <div className="pt-2">
