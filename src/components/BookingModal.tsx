@@ -26,6 +26,15 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selecte
   const [errorMsg, setErrorMsg] = useState('');
   const [phoneError, setPhoneError] = useState('');
 
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let raw = e.target.value.replace(/[^0-9০-৯]/g, '');
+    raw = raw.replace(/[0-9]/g, d => "০১২৩৪৫৬৭৮৯"[parseInt(d)]);
+    raw = raw.slice(0, 11);
+    
+    setPhone(raw);
+    setPhoneError('');
+  };
+
   const basePrice = initialSlot.price * hours;
   const parsedDiscount = parseInt(discount) || 0;
   const maxDiscount = hours * (settings?.max_discount_allowed || 100);
@@ -37,7 +46,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selecte
 
   // Auto-lookup customer
   useEffect(() => {
-    if (phone.length >= 11) {
+    if (phone.length === 11) {
       const fetchCustomer = async () => {
         const { data } = await supabase
           .from('customers')
@@ -158,9 +167,15 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selecte
               <div className="relative">
                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-orange" size={18} />
                 <input 
-                  type="tel" required placeholder="01XXXXXXXXX"
-                  value={phone} onChange={(e) => { setPhone(e.target.value); setPhoneError(''); }}
-                  className={`w-full pl-10 pr-3 py-3 bg-gray-50 border ${phoneError ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 focus:ring-brand-orange'} rounded-xl focus:ring-2 outline-none transition-all font-semibold`}
+                  type="tel" required placeholder="০১XXXXXXXXX"
+                  value={phone} onChange={handlePhoneChange} maxLength={11}
+                  className={`w-full pl-10 pr-3 py-3 bg-gray-50 border-2 ${
+                    phone.length === 11 
+                      ? 'border-green-500 focus:ring-green-500 focus:border-green-500' 
+                      : phone.length > 0 
+                        ? 'border-red-400 focus:ring-red-400 focus:border-red-400'
+                        : 'border-gray-200 focus:ring-brand-orange focus:border-brand-orange'
+                  } rounded-xl outline-none transition-all font-semibold`}
                 />
               </div>
               {phoneError && <p className="text-xs text-red-500 font-bold mt-1">{phoneError}</p>}

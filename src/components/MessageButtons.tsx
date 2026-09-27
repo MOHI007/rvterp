@@ -9,12 +9,13 @@ interface Props {
 
 export const MessageButtons: React.FC<Props> = ({ booking, slot }) => {
   const toBn = (num: number | string) => num.toString().replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[parseInt(d)]);
+  const toEn = (str: string) => str.replace(/[০-৯]/g, d => '0123456789'['০১২৩৪৫৬৭৮৯'.indexOf(d)]);
   
   const text = `আপনার বুকিং নিশ্চিত হয়েছে।\nটার্ফ: রিভার ভিউ টার্ফ।\nতারিখ: ${new Date(booking.date).toLocaleDateString('bn-BD')}, সময়: ${slot.timeLabel}।\nঅগ্রিম: ৳${toBn(booking.advance_paid)}, বাকি: ৳${toBn(booking.due_amount)}।\nযোগাযোগ: ০১৮২৩৫০৫০৮০`;
 
   const handleWhatsApp = () => {
-    let phone = booking.customer_phone;
-    if (phone.startsWith('0')) {
+    let phone = toEn(booking.customer_phone);
+    if (phone.startsWith('0') || phone.startsWith('০')) {
       phone = '88' + phone;
     }
     const url = `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
@@ -22,7 +23,7 @@ export const MessageButtons: React.FC<Props> = ({ booking, slot }) => {
   };
 
   const handleSMS = () => {
-    let phone = booking.customer_phone;
+    let phone = toEn(booking.customer_phone);
     const url = `sms:${phone}?body=${encodeURIComponent(text)}`;
     window.open(url, '_self');
   };
