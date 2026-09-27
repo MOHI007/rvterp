@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 import { type Booking, type Slot } from '../types';
 import { PaymentModal } from './PaymentModal';
 import { Receipt } from './Receipt';
-import { WhatsAppButton } from './WhatsAppButton';
+import { MessageButtons } from './MessageButtons';
 
 interface Props {
   booking: Booking;
@@ -238,7 +238,7 @@ export const ActiveBookingDetails: React.FC<Props> = ({ booking, slot, onClose, 
               </div>
               
               <div className="mt-5 space-y-3">
-                <WhatsAppButton booking={booking} slot={slot} />
+                <MessageButtons booking={booking} slot={slot} />
                 
                 <button 
                   onClick={handleCancelAndCredit}
