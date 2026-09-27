@@ -11,7 +11,7 @@ export const WhatsAppButton: React.FC<Props> = ({ booking, slot }) => {
   const toBn = (num: number | string) => num.toString().replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[parseInt(d)]);
   
   const handleSend = () => {
-    const text = `আপনার বুকিং নিশ্চিত হয়েছে।\nটার্ফ: সুপার টার্ফ এরিনা।\nতারিখ: ${new Date(booking.date).toLocaleDateString('bn-BD')}, সময়: ${slot.timeLabel}।\nঅগ্রিম: ৳${toBn(booking.advance_paid)}, বাকি: ৳${toBn(booking.due_amount)}।`;
+    const text = `আপনার বুকিং নিশ্চিত হয়েছে।\nটার্ফ: রিভার ভিউ টার্ফ।\nতারিখ: ${new Date(booking.date).toLocaleDateString('bn-BD')}, সময়: ${slot.timeLabel}।\nঅগ্রিম: ৳${toBn(booking.advance_paid)}, বাকি: ৳${toBn(booking.due_amount)}।\nযোগাযোগ: ০১৮২৩৫০৫০৮০`;
     
     // Format phone: ensure +880 prefix
     let phone = booking.customer_phone;

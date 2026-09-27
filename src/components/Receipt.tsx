@@ -11,9 +11,9 @@ export const Receipt: React.FC<ReceiptProps> = ({ booking }) => {
   const ReceiptBlock = ({ title }: { title: string }) => (
     <div className="text-black text-sm pb-2 pt-1 font-sans">
       <div className="text-center mb-2">
-        <h1 className="text-xl font-bold tracking-wider leading-tight">সুপার টার্ফ এরিনা</h1>
-        <p className="text-xs leading-snug">ঢাকা, বাংলাদেশ</p>
-        <p className="text-xs leading-snug">মোবাইল: 01XXX-XXXXXX</p>
+        <h1 className="text-xl font-bold tracking-wider leading-tight">রিভার ভিউ টার্ফ</h1>
+        <p className="text-[11px] leading-snug font-semibold mt-1">মাতামুহুরি ব্রিজ সংলগ্ন, চকরিয়া, কক্সবাজার।</p>
+        <p className="text-[11px] leading-snug font-bold mt-0.5">মোবাইল: ০১৮২৩৫০৫০৮০</p>
         <p className="font-bold text-xs mt-1 border border-black inline-block px-2 py-0.5 rounded">{title}</p>
       </div>
 

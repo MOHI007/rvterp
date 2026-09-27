@@ -63,7 +63,7 @@ export const Dashboard: React.FC = () => {
       <header className="bg-gradient-to-r from-brand-orange to-brand-amber text-white p-4 rounded-b-[2rem] shadow-md sticky top-0 z-10 no-print">
         <div className="flex justify-between items-center mb-5">
           <div>
-            <h1 className="text-2xl font-bold tracking-wide">ড্যাশবোর্ড</h1>
+            <h1 className="text-2xl font-bold tracking-wide">রিভার ভিউ টার্ফ</h1>
             <p className="text-sm font-medium opacity-90">{user?.name} (ম্যানেজার)</p>
           </div>
           
