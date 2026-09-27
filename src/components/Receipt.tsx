@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { supabase } from '../lib/supabase';
 import { type Booking } from '../types';
 
 interface ReceiptProps {
@@ -6,7 +7,26 @@ interface ReceiptProps {
 }
 
 export const Receipt: React.FC<ReceiptProps> = ({ booking }) => {
+  const [dueCollected, setDueCollected] = useState(0);
+
+  useEffect(() => {
+    const fetchDuePayments = async () => {
+      const { data } = await supabase
+        .from('payments')
+        .select('amount')
+        .eq('booking_id', booking.id)
+        .eq('type', 'Due');
+      
+      let sum = 0;
+      data?.forEach(p => sum += p.amount);
+      setDueCollected(sum);
+    };
+    fetchDuePayments();
+  }, [booking.id]);
+
   const toBn = (num: number | string) => num.toString().replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[parseInt(d)]);
+
+  const netTotal = booking.total_price - booking.discount;
 
   const ReceiptBlock = ({ title }: { title: string }) => (
     <div className="text-black text-sm pb-2 pt-1 font-sans">
@@ -29,14 +49,24 @@ export const Receipt: React.FC<ReceiptProps> = ({ booking }) => {
           <span>মোট বিল:</span>
           <span>৳{toBn(booking.total_price)}</span>
         </div>
-        <div className="flex justify-between">
+        <div className="flex justify-between text-gray-700">
           <span>ছাড়:</span>
-          <span>৳{toBn(booking.discount)}</span>
+          <span>- ৳{toBn(booking.discount)}</span>
         </div>
-        <div className="flex justify-between">
+        <div className="flex justify-between border-t border-dashed border-gray-400 pt-0.5 mt-0.5">
+          <span>সর্বমোট:</span>
+          <span>৳{toBn(netTotal)}</span>
+        </div>
+        <div className="flex justify-between text-gray-700">
           <span>অগ্রিম:</span>
-          <span>৳{toBn(booking.advance_paid)}</span>
+          <span>- ৳{toBn(booking.advance_paid)}</span>
         </div>
+        {dueCollected > 0 && (
+          <div className="flex justify-between text-gray-700">
+            <span>বকেয়া আদায়:</span>
+            <span>- ৳{toBn(dueCollected)}</span>
+          </div>
+        )}
         <div className="flex justify-between text-[14px] font-bold mt-1 pt-1 border-t border-black">
           <span>বকেয়া:</span>
           <span>৳{toBn(booking.due_amount)}</span>

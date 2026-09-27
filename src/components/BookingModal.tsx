@@ -30,8 +30,8 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selecte
   const parsedDiscount = parseInt(discount) || 0;
   const maxDiscount = hours * (settings?.max_discount_allowed || 100);
   
-  const totalAmount = basePrice - parsedDiscount;
-  const dueAmount = totalAmount - (parseInt(advance) || 0);
+  const netAmount = basePrice - parsedDiscount;
+  const dueAmount = Math.max(0, netAmount - (parseInt(advance) || 0));
 
   const toBn = (num: number | string) => num.toString().replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[parseInt(d)]);
 
@@ -87,7 +87,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selecte
         start_time: initialSlot.startTime,
         end_time: initialSlot.endTime, 
         customer_phone: phone,
-        total_price: totalAmount,
+        total_price: basePrice,
         discount: parsedDiscount,
         advance_paid: parseInt(advance) || 0,
         due_amount: dueAmount,
