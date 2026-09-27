@@ -70,7 +70,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selecte
     setErrorMsg('');
     setPhoneError('');
 
-    if (!/^01[3-9]\d{8}$/.test(phone)) {
+    if (phone.length !== 11 || (!phone.startsWith('০১') && !phone.startsWith('01'))) {
       setPhoneError('মোবাইল নাম্বার সঠিক নয় (১১ ডিজিট হতে হবে)');
       return;
     }
