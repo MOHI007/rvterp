@@ -24,6 +24,13 @@ export const Dashboard: React.FC = () => {
   const [activeBooked, setActiveBooked] = useState<{ booking: Booking, slot: Slot } | null>(null);
   const [showExpense, setShowExpense] = useState(false);
   const [showShiftClose, setShowShiftClose] = useState(false);
+  
+  // Force re-render every minute to keep past slots hiding dynamically
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => setTick(t => t + 1), 60000);
+    return () => clearInterval(timer);
+  }, []);
 
   const fetchBookings = async () => {
     const { data, error } = await supabase
@@ -59,8 +66,42 @@ export const Dashboard: React.FC = () => {
   const toBn = (num: number | string) => num.toString().replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[parseInt(d)]);
 
   const todayStr = getLocalDateStr();
-  const unbookedPrimeSlots = slots.filter(
-    s => s.isPrime && !bookings.find(b => b.start_time === s.startTime)
+  
+  // Time-Aware Slot Filtering Logic
+  const getCurrentHourBDST = () => {
+    // Current BDST time
+    const d = new Date();
+    const offset = d.getTimezoneOffset() * 60000;
+    const bdTime = new Date(d.getTime() + offset + (6 * 3600000)); // offset local time to UTC, then add 6 hours for BD
+    return bdTime.getHours();
+  };
+
+  const isToday = selectedDate === todayStr;
+  const currentHour = getCurrentHourBDST();
+
+  const isPastSlot = (startTimeStr: string) => {
+    if (!isToday) return false;
+    const slotHour = parseInt(startTimeStr.split(':')[0], 10);
+    
+    // Turf is open till 4 AM. So hours 0, 1, 2, 3 are technically "next day" but part of today's schedule.
+    // If current time is early morning (e.g., 2 AM) and slot is 20:00 (8 PM), the 8 PM slot is definitely past.
+    // Let's normalize hours relative to the 6 AM start time.
+    const normalizedSlot = slotHour < 6 ? slotHour + 24 : slotHour;
+    const normalizedCurrent = currentHour < 6 ? currentHour + 24 : currentHour;
+    
+    return normalizedSlot < normalizedCurrent;
+  };
+
+  const visibleSlots = slots.filter(slot => {
+    const isBooked = bookings.some(b => b.start_time === slot.startTime);
+    if (isToday && isPastSlot(slot.startTime) && !isBooked) {
+      return false; // Hide empty past slots
+    }
+    return true;
+  });
+
+  const unbookedPrimeSlots = visibleSlots.filter(
+    s => s.isPrime && !bookings.some(b => b.start_time === s.startTime)
   ).length;
 
   return (
@@ -115,7 +156,7 @@ export const Dashboard: React.FC = () => {
         </div>
         
         <div className="grid grid-cols-1 gap-3">
-          {slots.map(slot => (
+          {visibleSlots.map(slot => (
             <SlotCard 
               key={slot.id} 
               slot={slot} 
