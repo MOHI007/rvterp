@@ -6,11 +6,10 @@ import { SlotCard } from './SlotCard';
 import { BookingModal } from './BookingModal';
 import { ActiveBookingDetails } from './ActiveBookingDetails';
 import { ExpenseModal } from './ExpenseModal';
-import { ShiftCloseModal } from './ShiftCloseModal';
-import { Calendar, ChevronLeft, ChevronRight, LogOut, Wallet, Lock } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, LogOut, Wallet } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
-  const { user, logout, activeShiftId, settings } = useAuth();
+  const { user, logout, settings } = useAuth();
   const getLocalDateStr = (d: Date = new Date()) => {
     const offset = d.getTimezoneOffset() * 60000;
     return new Date(d.getTime() - offset).toISOString().split('T')[0];
@@ -23,7 +22,6 @@ export const Dashboard: React.FC = () => {
   const [activeSlot, setActiveSlot] = useState<Slot | null>(null);
   const [activeBooked, setActiveBooked] = useState<{ booking: Booking, slot: Slot } | null>(null);
   const [showExpense, setShowExpense] = useState(false);
-  const [showShiftClose, setShowShiftClose] = useState(false);
   
   // Force re-render every minute to keep past slots hiding dynamically
   const [, setTick] = useState(0);
@@ -121,13 +119,10 @@ export const Dashboard: React.FC = () => {
               <Wallet size={16} /> খরচ
             </button>
             <button 
-              onClick={() => {
-                if (activeShiftId) setShowShiftClose(true);
-                else logout();
-              }} 
+              onClick={logout} 
               className="px-3 py-2 bg-red-500/80 hover:bg-red-500 rounded-xl active:scale-95 transition-all text-sm font-bold flex items-center gap-1.5 shadow-sm backdrop-blur-md"
             >
-              {activeShiftId ? <><Lock size={16} /> শিফট শেষ</> : <><LogOut size={16} /> লগআউট</>}
+              <LogOut size={16} /> লগআউট
             </button>
           </div>
         </div>
@@ -200,11 +195,6 @@ export const Dashboard: React.FC = () => {
         />
       )}
 
-      {showShiftClose && (
-        <ShiftCloseModal 
-          onClose={() => setShowShiftClose(false)} 
-        />
-      )}
     </div>
   );
 };

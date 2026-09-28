@@ -10,7 +10,7 @@ interface Props {
 }
 
 export const ExpenseModal: React.FC<Props> = ({ onClose, onSuccess }) => {
-  const { activeShiftId, settings, user } = useAuth();
+  const { settings } = useAuth();
   
   const defaultCats = ['মেইনটেন্যান্স', 'ইউটিলিটি', 'বিবিধ'];
   const categories = (settings?.expense_categories && settings.expense_categories.length > 0) ? settings.expense_categories : defaultCats;
@@ -31,16 +31,10 @@ export const ExpenseModal: React.FC<Props> = ({ onClose, onSuccess }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!activeShiftId && user?.role !== 'admin') {
-      alert('কোনো সক্রিয় শিফট পাওয়া যায়নি।');
-      return;
-    }
-    
     setIsSubmitting(true);
     try {
       const enAmount = parseFloat(toEn(amount)) || 0;
       const { error } = await supabase.from('expenses').insert({
-        shift_id: activeShiftId || null,
         amount: enAmount,
         category,
         note

@@ -32,12 +32,6 @@ export const AdminDashboard: React.FC<{ onSwitchToPOS: () => void }> = ({ onSwit
 
   const generateDailyReport = async () => {
     const today = getLocalDateStr();
-    
-    const { data: shifts } = await supabase
-      .from('shifts')
-      .select('*')
-      .gte('created_at', today + 'T00:00:00Z')
-      .lte('created_at', today + 'T23:59:59Z');
 
     const { data: payments } = await supabase.from('payments').select('*').gte('created_at', today + 'T00:00:00Z');
     const { data: exps } = await supabase.from('expenses').select('amount').gte('created_at', today + 'T00:00:00Z');
@@ -62,30 +56,15 @@ export const AdminDashboard: React.FC<{ onSwitchToPOS: () => void }> = ({ onSwit
     setTodayMatches(bookings?.length || 0);
     setTodayUnbooked(Math.max(0, 14 - (bookings?.length || 0)));
 
-    let expectedCash = 0;
-    let actualCash = 0;
-    let shiftBkash = 0;
-    let shiftNagad = 0;
-
-    shifts?.forEach(s => {
-      expectedCash += s.expected_cash || 0;
-      actualCash += s.blind_counted_cash || 0;
-      shiftBkash += s.bkash_total || 0;
-      shiftNagad += s.nagad_total || 0;
-    });
-
-    const discrepancy = actualCash - expectedCash;
-    
     const text = `📊 *ডেইলি রিপোর্ট* (${new Date().toLocaleDateString('bn-BD')})\n\n` +
-                 `আজকের আয়: ৳${rev}\n` +
-                 `আজকের খরচ: ৳${exp}\n` +
+                 `আজকের আয়: ৳${toBn(rev)}\n` +
+                 `আজকের খরচ: ৳${toBn(exp)}\n` +
                  `---------------------------\n` +
-                 `মোট ক্যাশ কালেকশন: ৳${cash}\n` +
-                 `বিকাশ: ৳${shiftBkash}\n` +
-                 `নগদ: ৳${shiftNagad}\n` +
+                 `মোট ক্যাশ কালেকশন: ৳${toBn(cash)}\n` +
+                 `বিকাশ: ৳${toBn(bkash)}\n` +
+                 `নগদ: ৳${toBn(nagad)}\n` +
                  `---------------------------\n` +
-                 `ম্যানেজার জমা ক্যাশ: ৳${actualCash}\n` +
-                 `গরমিল: ${discrepancy > 0 ? '+' : ''}৳${discrepancy}`;
+                 `ক্যাশ ইন ড্রয়ার (Cash in Hand): ৳${toBn(cash - exp)}`;
                  
     setReportText(text);
   };

@@ -11,11 +11,9 @@ interface UserProfile {
 
 interface AuthContextType {
   user: UserProfile | null;
-  activeShiftId: string | null;
   settings: AppSettings | null;
   loginWithPin: (pin: string) => Promise<boolean>;
   logout: () => void;
-  setActiveShiftId: (id: string | null) => void;
   fetchSettings: () => Promise<void>;
 }
 
@@ -23,7 +21,6 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [activeShiftId, setActiveShiftId] = useState<string | null>(null);
   const [settings, setSettings] = useState<AppSettings | null>(null);
 
   const fetchSettings = async () => {
@@ -56,41 +53,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     setUser(data as UserProfile);
     
-    // Check for an open shift for this manager
-    const { data: shiftData } = await supabase
-      .from('shifts')
-      .select('id')
-      .eq('manager_id', data.id)
-      .eq('status', 'open')
-      .maybeSingle();
-      
-    if (shiftData) {
-      setActiveShiftId(shiftData.id);
-    } else {
-      // Auto-start a new shift
-      const { data: newShift, error: shiftError } = await supabase
-        .from('shifts')
-        .insert({ manager_id: data.id })
-        .select('id')
-        .single();
-        
-      if (!shiftError && newShift) {
-        setActiveShiftId(newShift.id);
-      } else {
-        console.error('Failed to create shift', shiftError);
-      }
-    }
-    
     return true;
   };
 
   const logout = () => {
     setUser(null);
-    setActiveShiftId(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, activeShiftId, settings, loginWithPin, logout, setActiveShiftId, fetchSettings }}>
+    <AuthContext.Provider value={{ user, settings, loginWithPin, logout, fetchSettings }}>
       {children}
     </AuthContext.Provider>
   );
