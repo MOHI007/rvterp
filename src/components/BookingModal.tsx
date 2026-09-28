@@ -59,15 +59,17 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selecte
     if (phone.length === 11) {
       const fetchCustomer = async () => {
         const enPhone = toEn(phone);
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from('customers')
           .select('*')
           .or(`phone_number.eq.${phone},phone_number.eq.${enPhone}`)
-          .maybeSingle();
+          .limit(1);
+          
+        if (error) console.error("Error fetching customer:", error);
         
-        if (data) {
-          setCustomerInfo(data);
-          setName(data.name);
+        if (data && data.length > 0) {
+          setCustomerInfo(data[0]);
+          setName(data[0].name);
         } else {
           setCustomerInfo(null);
         }
