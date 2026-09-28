@@ -40,9 +40,10 @@ export const ExpenseModal: React.FC<Props> = ({ onClose, onSuccess }) => {
       
       if (settings?.print_expense_voucher) {
         window.print();
+        setTimeout(() => onSuccess(), 2000);
+      } else {
+        onSuccess();
       }
-      
-      onSuccess();
     } catch (error) {
       console.error(error);
       alert('খরচ এন্ট্রি করতে সমস্যা হয়েছে।');
@@ -53,7 +54,7 @@ export const ExpenseModal: React.FC<Props> = ({ onClose, onSuccess }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="w-full max-w-sm bg-white rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+      <div className="w-full max-w-sm bg-white rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 no-print">
         
         <div className="bg-brand-orange p-4 text-white flex justify-between items-center">
           <h2 className="text-lg font-bold flex items-center gap-2">

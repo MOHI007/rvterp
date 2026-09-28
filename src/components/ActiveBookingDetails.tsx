@@ -110,7 +110,7 @@ export const ActiveBookingDetails: React.FC<Props> = ({ booking, slot, onClose, 
   return (
     <>
       <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-center">
-        <div className="w-full max-w-md bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom-full duration-300">
+        <div className="w-full max-w-md bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom-full duration-300 no-print">
           
           <div className={`p-4 text-white flex justify-between items-center transition-colors ${isInPlay ? 'bg-green-600' : isCompleted ? 'bg-gray-800' : 'bg-gradient-to-r from-brand-orange to-brand-amber'}`}>
             <h2 className="text-xl font-bold flex items-center gap-2">
