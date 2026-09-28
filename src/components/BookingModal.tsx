@@ -17,6 +17,8 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selecte
   const [phone, setPhone] = useState('');
   const [name, setName] = useState('');
   const [customerInfo, setCustomerInfo] = useState<Customer | null>(null);
+  const [totalMatches, setTotalMatches] = useState(0);
+  const [isExistingCustomer, setIsExistingCustomer] = useState(false);
   
   const [hours, setHours] = useState(1);
   const [discount, setDiscount] = useState('');
@@ -56,26 +58,37 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selecte
 
   // Auto-lookup customer
   useEffect(() => {
-    if (phone.length === 11) {
-      const fetchCustomer = async () => {
-        const enPhone = toEn(phone);
-        const { data, error } = await supabase
-          .from('customers')
-          .select('*')
-          .or(`phone_number.eq.${phone},phone_number.eq.${enPhone}`)
-          .limit(1);
-          
-        if (error) console.error("Error fetching customer:", error);
-        
-        if (data && data.length > 0) {
-          setCustomerInfo(data[0]);
-          setName(data[0].name);
-        } else {
-          setCustomerInfo(null);
-        }
-      };
-      fetchCustomer();
+    if (phone.length !== 11) {
+      setName('');
+      setTotalMatches(0);
+      setIsExistingCustomer(false);
+      setCustomerInfo(null);
+      return;
     }
+
+    const fetchCustomer = async () => {
+      const enPhone = toEn(phone);
+      const { data, error } = await supabase
+        .from('customers')
+        .select('*')
+        .or(`phone_number.eq.${phone},phone_number.eq.${enPhone}`)
+        .limit(1);
+        
+      if (error) console.error("Error fetching customer:", error);
+      
+      if (data && data.length > 0) {
+        setCustomerInfo(data[0]);
+        setName(data[0].name);
+        setTotalMatches(data[0].total_matches || 0);
+        setIsExistingCustomer(true);
+      } else {
+        setCustomerInfo(null);
+        setName('');
+        setTotalMatches(0);
+        setIsExistingCustomer(false);
+      }
+    };
+    fetchCustomer();
   }, [phone]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -108,10 +121,12 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selecte
     try {
       const finalName = name.trim() || 'অজানা গ্রাহক';
       
-      // 1. Upsert Customer
+      // 1. Upsert Customer (Increment Total Matches)
+      const newMatchCount = isExistingCustomer ? totalMatches + 1 : 1;
       await supabase.from('customers').upsert({
         phone_number: phone,
         name: finalName,
+        total_matches: newMatchCount
       }, { onConflict: 'phone_number' });
 
       // Generate Receipt ID
@@ -218,10 +233,16 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selecte
                 />
                 {customerInfo && <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 text-green-500" size={18} />}
               </div>
-              {customerInfo && (
-                <p className="text-xs text-green-600 font-semibold mt-1">
-                  ✓ পুরাতন গ্রাহক (মোট ম্যাচ: {toBn(customerInfo.total_matches)})
-                </p>
+              {phone.length === 11 && (
+                isExistingCustomer ? (
+                  <p className="text-xs text-green-600 font-semibold mt-1">
+                    ✓ পুরাতন গ্রাহক (মোট ম্যাচ: {toBn(totalMatches)})
+                  </p>
+                ) : (
+                  <p className="text-xs text-blue-500 font-semibold mt-1">
+                    নতুন গ্রাহক (New Customer)
+                  </p>
+                )
               )}
             </div>
           </div>
