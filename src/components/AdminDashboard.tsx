@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { LogOut, Copy, Download, Users, FileText, ArrowLeft, TrendingUp, Settings, Smartphone } from 'lucide-react';
+import { LogOut, Copy, Download, Users, FileText, ArrowLeft, TrendingUp, Settings } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { PnLCard } from './PnLCard';
 import { SettingsTab } from './SettingsTab';
 import { CustomerListTab } from './CustomerListTab';
 import { BkashIcon } from './icons/BkashIcon';
+import { NagadIcon } from './icons/NagadIcon';
 
 export const AdminDashboard: React.FC<{ onSwitchToPOS: () => void }> = ({ onSwitchToPOS }) => {
   const { logout, user } = useAuth();
@@ -218,7 +219,7 @@ export const AdminDashboard: React.FC<{ onSwitchToPOS: () => void }> = ({ onSwit
                     <span className="font-bold text-sm">৳{toBn(todayBkash)}</span>
                   </div>
                   <div className="flex items-center justify-between text-orange-500">
-                    <Smartphone size={15} />
+                    <NagadIcon size={18} />
                     <span className="font-bold text-sm">৳{toBn(todayNagad)}</span>
                   </div>
                 </div>
