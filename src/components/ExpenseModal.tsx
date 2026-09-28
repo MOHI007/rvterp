@@ -58,7 +58,7 @@ export const ExpenseModal: React.FC<Props> = ({ onClose, onSuccess }) => {
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">পরিমাণ (৳)</label>
             <input 
-              type="number" required placeholder="0"
+              type="number" required placeholder="0" min="0" onKeyDown={(e) => e.key === '-' && e.preventDefault()}
               value={amount} onChange={(e) => setAmount(e.target.value)}
               className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-orange outline-none font-bold text-lg"
             />

@@ -79,6 +79,12 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selecte
       setErrorMsg(`সর্বোচ্চ ছাড়ের সীমা ৳${toBn(maxDiscount)}!`);
       return;
     }
+
+    const parsedAdvance = parseInt(advance) || 0;
+    if (settings?.force_advance_payment && parsedAdvance <= 0) {
+      setErrorMsg('এই বুকিংয়ের জন্য অগ্রিম পেমেন্ট বাধ্যতামূলক!');
+      return;
+    }
     
     setIsSubmitting(true);
     try {
@@ -217,7 +223,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selecte
             <div>
               <label className="block text-sm font-medium text-gray-500 mb-1">ছাড় (৳)</label>
               <input 
-                type="number" placeholder="0"
+                type="number" placeholder="0" min="0" onKeyDown={(e) => e.key === '-' && e.preventDefault()}
                 value={discount} onChange={(e) => setDiscount(e.target.value)}
                 className="w-full px-3 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-orange outline-none font-semibold"
               />
@@ -238,7 +244,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selecte
             <div className="pt-2">
               <label className="block text-sm text-gray-500 mb-1">অগ্রিম জমা (ক্যাশ)</label>
               <input 
-                type="number" required placeholder="৳ 0"
+                type="number" required={settings?.force_advance_payment} placeholder="৳ 0" min="0" onKeyDown={(e) => e.key === '-' && e.preventDefault()}
                 value={advance} onChange={(e) => setAdvance(e.target.value)}
                 className="w-full px-4 py-3 bg-white border border-brand-orange rounded-xl focus:ring-2 focus:ring-brand-orange outline-none text-xl font-bold text-brand-orange text-center shadow-sm"
               />
