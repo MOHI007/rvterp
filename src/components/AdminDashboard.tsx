@@ -2,16 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { LogOut, Copy, Download, Users, FileText, ArrowLeft, TrendingUp, Settings } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { type Customer } from '../types';
 import { PnLCard } from './PnLCard';
 import { SettingsTab } from './SettingsTab';
+import { CustomerListTab } from './CustomerListTab';
 
 export const AdminDashboard: React.FC<{ onSwitchToPOS: () => void }> = ({ onSwitchToPOS }) => {
   const { logout, user } = useAuth();
   const [activeTab, setActiveTab] = useState<'report' | 'crm' | 'settings'>('report');
   
   const [reportText, setReportText] = useState('লোড হচ্ছে...');
-  const [customers, setCustomers] = useState<Customer[]>([]);
   const [isGeneratingCSV, setIsGeneratingCSV] = useState(false);
 
   const [todayRevenue, setTodayRevenue] = useState(0);
@@ -81,14 +80,8 @@ export const AdminDashboard: React.FC<{ onSwitchToPOS: () => void }> = ({ onSwit
     setReportText(text);
   };
 
-  const fetchCRM = async () => {
-    const { data } = await supabase.from('customers').select('*').order('total_matches', { ascending: false });
-    if (data) setCustomers(data);
-  };
-
   useEffect(() => {
     generateDailyReport();
-    fetchCRM();
   }, []);
 
   const handleCopy = () => {
@@ -246,27 +239,7 @@ export const AdminDashboard: React.FC<{ onSwitchToPOS: () => void }> = ({ onSwit
           </div>
         )}
 
-        {activeTab === 'crm' && (
-          <div className="space-y-3 animate-in slide-in-from-right-4">
-            <h2 className="font-bold text-gray-800 mb-2">সর্বোচ্চ ম্যাচ খেলা গ্রাহক</h2>
-            {customers.map(customer => (
-              <div key={customer.phone_number} className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center">
-                <div>
-                  <h3 className="font-bold text-gray-800 flex items-center gap-2">{customer.name}</h3>
-                  <p className="text-xs font-semibold text-gray-500">{customer.phone_number}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-bold text-brand-orange">{toBn(customer.total_matches)} ম্যাচ</p>
-                  {customer.advance_balance > 0 && (
-                    <p className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-lg inline-block mt-1 font-bold">
-                      ক্রেডিট: ৳{toBn(customer.advance_balance)}
-                    </p>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        {activeTab === 'crm' && <CustomerListTab />}
 
         {activeTab === 'settings' && <SettingsTab />}
       </main>
