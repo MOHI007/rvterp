@@ -33,6 +33,9 @@ input[type='number'] {
   .print-receipt-container, .print-receipt-container * {
     visibility: visible;
   }
+  .no-print {
+    display: none !important;
+  }
   
   .print-receipt-container {
     display: block !important;
@@ -41,7 +44,7 @@ input[type='number'] {
     top: 0;
     width: 58mm;
     margin: 0;
-    padding: 1mm;
+    padding: 0;
     background-color: white;
     color: black;
   }

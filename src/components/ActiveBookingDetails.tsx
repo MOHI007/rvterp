@@ -165,7 +165,7 @@ export const ActiveBookingDetails: React.FC<Props> = ({ booking, slot, onClose, 
                   }`}
                 >
                   <Play size={20} className={booking.actual_check_in ? 'text-green-500' : ''} />
-                  <span>{booking.actual_check_in ? formatTimeStr(booking.actual_check_in) : 'চেক-ইন'}</span>
+                  <span>{booking.actual_check_in ? formatTimeStr(booking.actual_check_in) : isUpdatingTime ? 'অপেক্ষা করুন...' : 'চেক-ইন'}</span>
                 </button>
 
                 <button 
@@ -180,7 +180,7 @@ export const ActiveBookingDetails: React.FC<Props> = ({ booking, slot, onClose, 
                   }`}
                 >
                   <Square size={20} className={booking.actual_check_out ? 'text-red-500' : ''} />
-                  <span>{booking.actual_check_out ? formatTimeStr(booking.actual_check_out) : 'চেক-আউট'}</span>
+                  <span>{booking.actual_check_out ? formatTimeStr(booking.actual_check_out) : isUpdatingTime ? 'অপেক্ষা করুন...' : 'চেক-আউট'}</span>
                 </button>
               </div>
 
@@ -243,9 +243,9 @@ export const ActiveBookingDetails: React.FC<Props> = ({ booking, slot, onClose, 
                 <button 
                   onClick={handleCancelAndCredit}
                   disabled={isUpdatingTime}
-                  className="w-full py-3 bg-red-50 text-red-600 border border-red-200 rounded-xl font-bold active:scale-95 transition-transform flex justify-center items-center gap-2"
+                  className="w-full py-3 bg-red-50 text-red-600 border border-red-200 rounded-xl font-bold active:scale-95 transition-transform flex justify-center items-center gap-2 disabled:opacity-50"
                 >
-                  বুকিং বাতিল ও ক্রেডিট সেভ
+                  {isUpdatingTime ? 'অপেক্ষা করুন...' : 'বুকিং বাতিল ও ক্রেডিট সেভ'}
                 </button>
 
                 <button 

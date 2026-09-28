@@ -11,7 +11,12 @@ import { Calendar, ChevronLeft, ChevronRight, LogOut, Wallet, Lock } from 'lucid
 
 export const Dashboard: React.FC = () => {
   const { user, logout, activeShiftId, settings } = useAuth();
-  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const getLocalDateStr = (d: Date = new Date()) => {
+    const offset = d.getTimezoneOffset() * 60000;
+    return new Date(d.getTime() - offset).toISOString().split('T')[0];
+  };
+
+  const [selectedDate, setSelectedDate] = useState(() => getLocalDateStr());
   const slots = React.useMemo(() => generateDailySlots(settings || undefined), [settings]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   
@@ -48,12 +53,12 @@ export const Dashboard: React.FC = () => {
   const changeDate = (days: number) => {
     const d = new Date(selectedDate);
     d.setDate(d.getDate() + days);
-    setSelectedDate(d.toISOString().split('T')[0]);
+    setSelectedDate(getLocalDateStr(d));
   };
 
   const toBn = (num: number | string) => num.toString().replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[parseInt(d)]);
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getLocalDateStr();
   const unbookedPrimeSlots = slots.filter(
     s => s.isPrime && !bookings.find(b => b.start_time === s.startTime)
   ).length;

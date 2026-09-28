@@ -22,8 +22,13 @@ export const AdminDashboard: React.FC<{ onSwitchToPOS: () => void }> = ({ onSwit
 
   const toBn = (num: number | string) => num.toString().replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[parseInt(d)]);
 
+  const getLocalDateStr = (d: Date = new Date()) => {
+    const offset = d.getTimezoneOffset() * 60000;
+    return new Date(d.getTime() - offset).toISOString().split('T')[0];
+  };
+
   const generateDailyReport = async () => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getLocalDateStr();
     
     const { data: shifts } = await supabase
       .from('shifts')
@@ -98,7 +103,7 @@ export const AdminDashboard: React.FC<{ onSwitchToPOS: () => void }> = ({ onSwit
       const { data: bookings } = await supabase
         .from('bookings')
         .select('*')
-        .gte('date', thirtyDaysAgo.toISOString().split('T')[0]);
+        .gte('date', getLocalDateStr(thirtyDaysAgo));
 
       if (!bookings) return;
       
@@ -115,7 +120,7 @@ export const AdminDashboard: React.FC<{ onSwitchToPOS: () => void }> = ({ onSwit
       
       const a = document.createElement('a');
       a.href = url;
-      a.download = `monthly_report_${new Date().toISOString().split('T')[0]}.csv`;
+      a.download = `monthly_report_${getLocalDateStr()}.csv`;
       a.click();
     } catch (e) {
       alert("ডাউনলোড ফেইল হয়েছে।");
