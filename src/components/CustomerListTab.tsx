@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Search, Phone, Edit2, MessageCircle, X, CheckCircle2 } from 'lucide-react';
+import { Search, Phone, Edit2, MessageCircle, X, CheckCircle2, MoreVertical } from 'lucide-react';
 import { type Customer } from '../types';
 
 export const CustomerListTab: React.FC = () => {
@@ -8,6 +8,7 @@ export const CustomerListTab: React.FC = () => {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | 'top' | 'credit'>('all');
   const [loading, setLoading] = useState(true);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   // Edit Modal State
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
@@ -64,7 +65,15 @@ export const CustomerListTab: React.FC = () => {
   });
 
   return (
-    <div className="space-y-4 animate-in slide-in-from-right-4">
+    <div className="space-y-4 animate-in slide-in-from-right-4 relative">
+      
+      {/* Invisible Overlay for Menu */}
+      {openMenuId && (
+        <div 
+          className="fixed inset-0 z-40"
+          onClick={() => setOpenMenuId(null)}
+        />
+      )}
       
       {/* Search Bar */}
       <div className="relative">
@@ -108,7 +117,7 @@ export const CustomerListTab: React.FC = () => {
           <p className="text-center text-gray-400 py-10 font-bold">কোনো গ্রাহক পাওয়া যায়নি</p>
         ) : (
           filteredCustomers.map(customer => (
-            <div key={customer.phone_number} className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-3">
+            <div key={customer.phone_number} className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-3 relative">
               <div className="flex justify-between items-start">
                 <div>
                   <h3 className="font-bold text-gray-800 text-lg flex items-center gap-2">
@@ -117,7 +126,7 @@ export const CustomerListTab: React.FC = () => {
                   </h3>
                   <p className="text-sm font-semibold text-gray-500 font-mono tracking-wider">{customer.phone_number}</p>
                 </div>
-                <div className="text-right">
+                <div className="text-right pr-6">
                   <p className="text-sm font-bold text-gray-700 bg-gray-100 px-2 py-1 rounded-lg">ম্যাচ: {toBn(customer.total_matches)}</p>
                   {customer.advance_balance > 0 && (
                     <p className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-lg inline-block mt-1 font-bold">
@@ -127,31 +136,45 @@ export const CustomerListTab: React.FC = () => {
                 </div>
               </div>
               
-              <div className="flex justify-end gap-2 border-t border-gray-50 pt-3">
-                <a 
-                  href={`tel:${toEn(customer.phone_number)}`}
-                  className="p-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition-colors"
-                >
-                  <Phone size={18} />
-                </a>
-                <a 
-                  href={`https://wa.me/88${toEn(customer.phone_number)}`}
-                  target="_blank" rel="noreferrer"
-                  className="p-2 bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#25D366] rounded-xl transition-colors"
-                >
-                  <MessageCircle size={18} />
-                </a>
-                <button 
-                  onClick={() => {
-                    setEditingCustomer(customer);
-                    setEditName(customer.name);
-                    setEditCredit(customer.advance_balance.toString());
-                  }}
-                  className="p-2 bg-brand-orange/10 hover:bg-brand-orange/20 text-brand-orange rounded-xl transition-colors"
-                >
-                  <Edit2 size={18} />
-                </button>
-              </div>
+              {/* Action Menu Button */}
+              <button 
+                onClick={() => setOpenMenuId(openMenuId === customer.phone_number ? null : customer.phone_number)}
+                className="absolute top-4 right-2 p-1 text-gray-400 hover:bg-gray-100 rounded-full transition-colors z-10"
+              >
+                <MoreVertical size={20} />
+              </button>
+
+              {/* Dropdown Popup */}
+              {openMenuId === customer.phone_number && (
+                <div className="absolute right-4 top-12 mt-1 w-44 z-50 shadow-xl rounded-xl bg-gray-800 border border-gray-700 py-2 animate-in zoom-in-95 duration-100 origin-top-right">
+                  <a 
+                    href={`tel:${toEn(customer.phone_number)}`}
+                    onClick={() => setOpenMenuId(null)}
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-white hover:bg-gray-700 transition-colors"
+                  >
+                    <Phone size={16} className="text-gray-400" /> কল করুন
+                  </a>
+                  <a 
+                    href={`https://wa.me/88${toEn(customer.phone_number)}`}
+                    target="_blank" rel="noreferrer"
+                    onClick={() => setOpenMenuId(null)}
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-white hover:bg-gray-700 transition-colors"
+                  >
+                    <MessageCircle size={16} className="text-[#25D366]" /> হোয়াটসঅ্যাপ
+                  </a>
+                  <button 
+                    onClick={() => {
+                      setEditingCustomer(customer);
+                      setEditName(customer.name);
+                      setEditCredit(customer.advance_balance.toString());
+                      setOpenMenuId(null);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-white hover:bg-gray-700 transition-colors text-left"
+                  >
+                    <Edit2 size={16} className="text-brand-orange" /> এডিট করুন
+                  </button>
+                </div>
+              )}
             </div>
           ))
         )}
