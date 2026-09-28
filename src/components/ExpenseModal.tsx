@@ -21,6 +21,13 @@ export const ExpenseModal: React.FC<Props> = ({ onClose, onSuccess }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const toBn = (num: number | string) => num.toString().replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[parseInt(d)]);
+  const toEn = (bnStr: string) => bnStr.replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d).toString());
+
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let val = e.target.value.replace(/[^0-9০-৯]/g, '');
+    val = val.replace(/[0-9]/g, d => "০১২৩৪৫৬৭৮৯"[parseInt(d)]);
+    setAmount(val);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,9 +38,10 @@ export const ExpenseModal: React.FC<Props> = ({ onClose, onSuccess }) => {
     
     setIsSubmitting(true);
     try {
+      const enAmount = parseFloat(toEn(amount)) || 0;
       const { error } = await supabase.from('expenses').insert({
         shift_id: activeShiftId || null,
-        amount: parseInt(amount) || 0,
+        amount: enAmount,
         category,
         note
       });
@@ -71,8 +79,8 @@ export const ExpenseModal: React.FC<Props> = ({ onClose, onSuccess }) => {
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">পরিমাণ (৳)</label>
             <input 
-              type="number" required placeholder="0" min="0" onKeyDown={(e) => e.key === '-' && e.preventDefault()}
-              value={amount} onChange={(e) => setAmount(e.target.value)}
+              type="text" inputMode="numeric" required placeholder="০" 
+              value={amount} onChange={handleAmountChange}
               className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-orange outline-none font-bold text-lg"
             />
           </div>

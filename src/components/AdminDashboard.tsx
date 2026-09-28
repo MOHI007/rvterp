@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { LogOut, Copy, Download, Users, FileText, ArrowLeft, TrendingUp, Settings } from 'lucide-react';
+import { LogOut, Copy, Download, Users, FileText, ArrowLeft, TrendingUp, Settings, Smartphone } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { PnLCard } from './PnLCard';
 import { SettingsTab } from './SettingsTab';
@@ -16,7 +16,8 @@ export const AdminDashboard: React.FC<{ onSwitchToPOS: () => void }> = ({ onSwit
   const [todayRevenue, setTodayRevenue] = useState(0);
   const [todayExpenses, setTodayExpenses] = useState(0);
   const [todayCash, setTodayCash] = useState(0);
-  const [todayDigital, setTodayDigital] = useState(0);
+  const [todayBkash, setTodayBkash] = useState(0);
+  const [todayNagad, setTodayNagad] = useState(0);
   const [todayMatches, setTodayMatches] = useState(0);
   const [todayUnbooked, setTodayUnbooked] = useState(14);
 
@@ -40,11 +41,12 @@ export const AdminDashboard: React.FC<{ onSwitchToPOS: () => void }> = ({ onSwit
     const { data: exps } = await supabase.from('expenses').select('amount').gte('created_at', today + 'T00:00:00Z');
     const { data: bookings } = await supabase.from('bookings').select('id').eq('date', today);
     
-    let rev = 0; let cash = 0; let digital = 0;
+    let rev = 0; let cash = 0; let bkash = 0; let nagad = 0;
     payments?.forEach(p => {
       rev += p.amount;
       if (p.method === 'Cash') cash += p.amount;
-      else digital += p.amount;
+      else if (p.method === 'bKash') bkash += p.amount;
+      else if (p.method === 'Nagad') nagad += p.amount;
     });
 
     let exp = 0;
@@ -53,20 +55,21 @@ export const AdminDashboard: React.FC<{ onSwitchToPOS: () => void }> = ({ onSwit
     setTodayRevenue(rev);
     setTodayExpenses(exp);
     setTodayCash(cash);
-    setTodayDigital(digital);
+    setTodayBkash(bkash);
+    setTodayNagad(nagad);
     setTodayMatches(bookings?.length || 0);
     setTodayUnbooked(Math.max(0, 14 - (bookings?.length || 0)));
 
     let expectedCash = 0;
     let actualCash = 0;
-    let bkash = 0;
-    let nagad = 0;
+    let shiftBkash = 0;
+    let shiftNagad = 0;
 
     shifts?.forEach(s => {
       expectedCash += s.expected_cash || 0;
       actualCash += s.blind_counted_cash || 0;
-      bkash += s.bkash_total || 0;
-      nagad += s.nagad_total || 0;
+      shiftBkash += s.bkash_total || 0;
+      shiftNagad += s.nagad_total || 0;
     });
 
     const discrepancy = actualCash - expectedCash;
@@ -76,8 +79,8 @@ export const AdminDashboard: React.FC<{ onSwitchToPOS: () => void }> = ({ onSwit
                  `আজকের খরচ: ৳${exp}\n` +
                  `---------------------------\n` +
                  `মোট ক্যাশ কালেকশন: ৳${cash}\n` +
-                 `বিকাশ: ৳${bkash}\n` +
-                 `নগদ: ৳${nagad}\n` +
+                 `বিকাশ: ৳${shiftBkash}\n` +
+                 `নগদ: ৳${shiftNagad}\n` +
                  `---------------------------\n` +
                  `ম্যানেজার জমা ক্যাশ: ৳${actualCash}\n` +
                  `গরমিল: ${discrepancy > 0 ? '+' : ''}৳${discrepancy}`;
@@ -208,9 +211,15 @@ export const AdminDashboard: React.FC<{ onSwitchToPOS: () => void }> = ({ onSwit
                   <p className="text-gray-500 text-xs">আজকের ক্যাশ</p>
                   <p className="text-lg font-bold text-green-600">৳{toBn(todayCash)}</p>
                 </div>
-                <div className="bg-gray-50 border border-gray-200 p-3 rounded-xl">
-                  <p className="text-gray-500 text-xs">ডিজিটাল পেমেন্ট</p>
-                  <p className="text-lg font-bold text-blue-500">৳{toBn(todayDigital)}</p>
+                <div className="bg-gray-50 border border-gray-200 p-2 rounded-xl flex flex-col justify-center gap-1.5">
+                  <div className="flex items-center justify-between text-pink-500">
+                    <Smartphone size={15} />
+                    <span className="font-bold text-sm">৳{toBn(todayBkash)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-orange-500">
+                    <Smartphone size={15} />
+                    <span className="font-bold text-sm">৳{toBn(todayNagad)}</span>
+                  </div>
                 </div>
               </div>
             </div>

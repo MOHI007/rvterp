@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Calculator } from 'lucide-react';
+import { Calculator, Smartphone } from 'lucide-react';
 
 export const PnLCard: React.FC = () => {
   const [revenue, setRevenue] = useState(0);
@@ -8,7 +8,8 @@ export const PnLCard: React.FC = () => {
   const [totalMatches, setTotalMatches] = useState(0);
   const [totalDiscount, setTotalDiscount] = useState(0);
   const [cashTotal, setCashTotal] = useState(0);
-  const [digitalTotal, setDigitalTotal] = useState(0);
+  const [bkashTotal, setBkashTotal] = useState(0);
+  const [nagadTotal, setNagadTotal] = useState(0);
   
   const toBn = (num: number | string) => num.toString().replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[parseInt(d)]);
 
@@ -24,12 +25,14 @@ export const PnLCard: React.FC = () => {
 
       let rev = 0;
       let cTotal = 0;
-      let dTotal = 0;
+      let bkTotal = 0;
+      let ngTotal = 0;
       
       payments?.forEach(p => {
         rev += p.amount;
         if (p.method === 'Cash') cTotal += p.amount;
-        else dTotal += p.amount;
+        else if (p.method === 'bKash') bkTotal += p.amount;
+        else if (p.method === 'Nagad') ngTotal += p.amount;
       });
 
       let exp = 0;
@@ -43,7 +46,8 @@ export const PnLCard: React.FC = () => {
       setTotalMatches(bookings?.length || 0);
       setTotalDiscount(disc);
       setCashTotal(cTotal);
-      setDigitalTotal(dTotal);
+      setBkashTotal(bkTotal);
+      setNagadTotal(ngTotal);
     };
     fetchPnL();
   }, []);
@@ -83,9 +87,15 @@ export const PnLCard: React.FC = () => {
           <p className="text-gray-400 text-xs">ক্যাশ কালেকশন</p>
           <p className="text-lg font-bold text-green-400">৳{toBn(cashTotal)}</p>
         </div>
-        <div className="bg-gray-800 border border-gray-700 p-3 rounded-xl">
-          <p className="text-gray-400 text-xs">ডিজিটাল (বিকাশ/নগদ)</p>
-          <p className="text-lg font-bold text-blue-400">৳{toBn(digitalTotal)}</p>
+        <div className="bg-gray-800 border border-gray-700 p-2 rounded-xl flex flex-col justify-center gap-1.5">
+          <div className="flex items-center justify-between text-pink-400">
+            <Smartphone size={15} />
+            <span className="font-bold text-sm">৳{toBn(bkashTotal)}</span>
+          </div>
+          <div className="flex items-center justify-between text-orange-400">
+            <Smartphone size={15} />
+            <span className="font-bold text-sm">৳{toBn(nagadTotal)}</span>
+          </div>
         </div>
       </div>
     </div>
