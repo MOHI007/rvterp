@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, User, Clock, Info } from 'lucide-react';
+import { Plus, User, Clock } from 'lucide-react';
 import { type Slot, type Booking } from '../types';
 
 interface SlotCardProps {
@@ -24,7 +24,7 @@ export const SlotCard: React.FC<SlotCardProps> = ({ slot, booking, onBook, onVie
   if (state === 'বুকড' && booking) {
     // If we have actual check in/out times, it's "চলমান" (In-play) or "সম্পন্ন" (Completed)
     const isInPlay = booking.actual_check_in && !booking.actual_check_out;
-    const bgClass = isInPlay ? 'bg-[#1F2937] text-white border-none' : 'bg-[#FF6B00] text-white border-none';
+    const bgClass = isInPlay ? 'bg-[#1F2937] text-white border-none' : 'bg-emerald-600 text-white border-none';
 
     return (
       <button 
@@ -60,10 +60,6 @@ export const SlotCard: React.FC<SlotCardProps> = ({ slot, booking, onBook, onVie
               ✓ পেইড
             </span>
           )}
-        </div>
-        
-        <div className="absolute bottom-4 right-4 bg-white/20 p-1.5 rounded-full z-10">
-            <Info size={18} />
         </div>
 
         {/* Premium Watermark Stamp */}

@@ -107,13 +107,13 @@ export const Dashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-surface flex flex-col font-sans pb-10">
       <header className="bg-gradient-to-r from-brand-orange to-brand-amber text-white p-4 rounded-b-[2rem] shadow-md sticky top-0 z-10 no-print">
-        <div className="flex justify-between items-center mb-5">
-          <div>
+        <div className="flex justify-between items-center mb-5 w-full">
+          <div className="flex-shrink-0">
             <h1 className="text-2xl font-bold tracking-wide">রিভার ভিউ টার্ফ</h1>
             <p className="text-sm font-medium opacity-90">{user?.name} (ম্যানেজার)</p>
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <button 
               onClick={() => setShowExpense(true)} 
               className="px-3 py-2 bg-white/20 rounded-xl active:bg-white/30 active:scale-95 transition-all text-sm font-bold flex items-center gap-1.5 shadow-sm backdrop-blur-md"
