@@ -20,6 +20,7 @@ export interface Booking {
   due_amount: number;
   status: 'confirmed' | 'cancelled' | 'completed';
   note?: string;
+  booked_by_role?: 'admin' | 'manager';
   customers?: Customer; // Joined property from Supabase
 }
 

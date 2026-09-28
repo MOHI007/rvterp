@@ -12,7 +12,7 @@ interface BookingModalProps {
 }
 
 export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selectedDate, onClose, onSuccess }) => {
-  const { settings } = useAuth();
+  const { settings, user } = useAuth();
   
   const [phone, setPhone] = useState('');
   const [name, setName] = useState('');
@@ -137,7 +137,8 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selecte
         discount: parsedDiscount,
         advance_paid: parseInt(advance) || 0,
         due_amount: dueAmount,
-        status: 'confirmed'
+        status: 'confirmed',
+        booked_by_role: user?.role || 'manager'
       }).select().single();
 
       if (bookingError) throw bookingError;

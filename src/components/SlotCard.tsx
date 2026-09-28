@@ -62,9 +62,18 @@ export const SlotCard: React.FC<SlotCardProps> = ({ slot, booking, onBook, onVie
           )}
         </div>
         
-        <div className="absolute bottom-4 right-4 bg-white/20 p-1.5 rounded-full">
+        <div className="absolute bottom-4 right-4 bg-white/20 p-1.5 rounded-full z-10">
             <Info size={18} />
         </div>
+
+        {/* Premium Watermark Stamp */}
+        {booking.booked_by_role && (
+          <div className="absolute top-10 -right-4 -rotate-12 pointer-events-none opacity-[0.15] z-0">
+            <span className="border-4 border-white px-3 py-1 rounded-xl text-2xl font-black uppercase tracking-wider text-white">
+              {booking.booked_by_role === 'admin' ? 'মালিক দ্বারা' : 'ম্যানেজার'}
+            </span>
+          </div>
+        )}
       </button>
     );
   }
