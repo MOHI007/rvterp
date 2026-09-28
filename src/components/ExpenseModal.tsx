@@ -9,11 +9,17 @@ interface Props {
 }
 
 export const ExpenseModal: React.FC<Props> = ({ onClose, onSuccess }) => {
-  const { activeShiftId } = useAuth();
+  const { activeShiftId, settings } = useAuth();
+  
+  const defaultCats = ['মেইনটেন্যান্স', 'ইউটিলিটি', 'বিবিধ'];
+  const categories = (settings?.expense_categories && settings.expense_categories.length > 0) ? settings.expense_categories : defaultCats;
+  
   const [amount, setAmount] = useState('');
-  const [category, setCategory] = useState('Maintenance');
+  const [category, setCategory] = useState(categories[0]);
   const [note, setNote] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const toBn = (num: number | string) => num.toString().replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[parseInt(d)]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,6 +37,11 @@ export const ExpenseModal: React.FC<Props> = ({ onClose, onSuccess }) => {
         note
       });
       if (error) throw error;
+      
+      if (settings?.print_expense_voucher) {
+        window.print();
+      }
+      
       onSuccess();
     } catch (error) {
       console.error(error);
@@ -70,9 +81,9 @@ export const ExpenseModal: React.FC<Props> = ({ onClose, onSuccess }) => {
               value={category} onChange={(e) => setCategory(e.target.value)}
               className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-orange outline-none font-semibold"
             >
-              <option value="Maintenance">মেইনটেন্যান্স (পরিষ্কার/মেরামত)</option>
-              <option value="Utility">ইউটিলিটি (পানি/বিদ্যুৎ)</option>
-              <option value="Miscellaneous">বিবিধ (অন্যান্য)</option>
+              {categories.map((cat, i) => (
+                <option key={i} value={cat}>{cat}</option>
+              ))}
             </select>
           </div>
 
@@ -93,6 +104,39 @@ export const ExpenseModal: React.FC<Props> = ({ onClose, onSuccess }) => {
             {isSubmitting ? 'প্রসেসিং...' : <><CheckCircle2 size={20} /> এন্ট্রি করুন</>}
           </button>
         </form>
+      </div>
+
+      {/* Hidden Thermal Expense Voucher */}
+      <div className="print-receipt-container hidden text-black text-sm pb-2 pt-1 font-sans">
+        <div className="text-center mb-3">
+          <h1 className="text-xl font-bold tracking-wider leading-tight">রিভার ভিউ টার্ফ</h1>
+          <p className="font-bold text-xs mt-2 border border-black inline-block px-2 py-0.5 rounded">খরচের ভাউচার</p>
+        </div>
+        
+        <div className="space-y-1 text-xs mb-3 font-semibold">
+          <p><strong>তারিখ:</strong> {new Date().toLocaleDateString('bn-BD')}</p>
+          <p><strong>সময়:</strong> {new Date().toLocaleTimeString('bn-BD')}</p>
+        </div>
+
+        <div className="border-t-2 border-b-2 border-dashed border-black py-2 mb-3 space-y-1 text-xs font-semibold">
+          <div className="flex justify-between text-gray-800">
+            <span>ক্যাটাগরি:</span>
+            <span>{category}</span>
+          </div>
+          <div className="flex justify-between text-gray-800">
+            <span>বিবরণ:</span>
+            <span className="text-right max-w-[60%]">{note}</span>
+          </div>
+          <div className="flex justify-between text-lg font-bold mt-2 pt-2 border-t border-black">
+            <span>মোট খরচ:</span>
+            <span>৳{toBn(amount || 0)}</span>
+          </div>
+        </div>
+        
+        <div className="mt-8 flex justify-between text-[10px] font-bold">
+          <span className="border-t border-black pt-1 px-2">ম্যানেজার স্বাক্ষর</span>
+          <span className="border-t border-black pt-1 px-2">কর্তৃপক্ষ স্বাক্ষর</span>
+        </div>
       </div>
     </div>
   );

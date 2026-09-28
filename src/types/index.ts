@@ -44,6 +44,8 @@ export interface AppSettings {
   receipt_footer_text?: string;
   force_advance_payment?: boolean;
   print_office_copy?: boolean;
+  print_expense_voucher?: boolean;
+  expense_categories?: string[];
 }
 
 export const generateDailySlots = (settings?: AppSettings): Slot[] => {

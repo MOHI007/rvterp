@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Save } from 'lucide-react';
+import { Save, Plus, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export const SettingsTab: React.FC = () => {
@@ -14,6 +14,9 @@ export const SettingsTab: React.FC = () => {
   const [receiptFooterText, setReceiptFooterText] = useState('দয়া করে টার্ফ শু পরিধান করুন।');
   const [forceAdvance, setForceAdvance] = useState(false);
   const [printOfficeCopy, setPrintOfficeCopy] = useState(true);
+  const [printExpenseVoucher, setPrintExpenseVoucher] = useState(false);
+  const [expenseCategories, setExpenseCategories] = useState<string[]>(['মেইনটেন্যান্স', 'ইউটিলিটি', 'বিবিধ']);
+  const [newCategory, setNewCategory] = useState('');
   
   const [isSaving, setIsSaving] = useState(false);
 
@@ -27,6 +30,10 @@ export const SettingsTab: React.FC = () => {
       if (settings.receipt_footer_text) setReceiptFooterText(settings.receipt_footer_text);
       setForceAdvance(settings.force_advance_payment || false);
       setPrintOfficeCopy(settings.print_office_copy ?? true);
+      setPrintExpenseVoucher(settings.print_expense_voucher ?? false);
+      if (settings.expense_categories && settings.expense_categories.length > 0) {
+        setExpenseCategories(settings.expense_categories);
+      }
     }
   }, [settings]);
 
@@ -43,7 +50,9 @@ export const SettingsTab: React.FC = () => {
         max_discount_allowed: maxDiscountSlot,
         receipt_footer_text: receiptFooterText,
         force_advance_payment: forceAdvance,
-        print_office_copy: printOfficeCopy
+        print_office_copy: printOfficeCopy,
+        print_expense_voucher: printExpenseVoucher,
+        expense_categories: expenseCategories
       };
       
       const { error } = await supabase
@@ -129,6 +138,68 @@ export const SettingsTab: React.FC = () => {
             <input type="checkbox" className="sr-only peer" checked={printOfficeCopy} onChange={() => setPrintOfficeCopy(!printOfficeCopy)} />
             <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-orange"></div>
           </label>
+        </div>
+      </div>
+
+      <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 space-y-4">
+        <h3 className="font-bold text-gray-800 border-b border-gray-100 pb-2">খরচের সেটিংস (Expense Settings)</h3>
+        
+        <div className="flex items-center justify-between">
+          <div>
+            <h4 className="font-bold text-sm text-gray-800">খরচের ভাউচার প্রিন্ট করুন</h4>
+            <p className="text-[11px] text-gray-500">খরচ এন্ট্রি করার পর ভাউচার প্রিন্ট হবে</p>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" className="sr-only peer" checked={printExpenseVoucher} onChange={() => setPrintExpenseVoucher(!printExpenseVoucher)} />
+            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-orange"></div>
+          </label>
+        </div>
+
+        <div className="pt-2 border-t border-gray-100">
+          <label className="block text-xs font-bold text-gray-500 mb-2">ক্যাটাগরি ম্যানেজমেন্ট</label>
+          <div className="flex flex-wrap gap-2 mb-3">
+            {expenseCategories.map((cat, idx) => (
+              <div key={idx} className="flex items-center gap-1 bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm font-semibold">
+                {cat}
+                <button 
+                  onClick={() => setExpenseCategories(expenseCategories.filter((_, i) => i !== idx))}
+                  className="text-gray-400 hover:text-red-500 transition-colors ml-1"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+          
+          <div className="flex gap-2">
+            <input 
+              type="text" 
+              placeholder="নতুন ক্যাটাগরি..." 
+              value={newCategory}
+              onChange={e => setNewCategory(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && newCategory.trim()) {
+                  e.preventDefault();
+                  if (!expenseCategories.includes(newCategory.trim())) {
+                    setExpenseCategories([...expenseCategories, newCategory.trim()]);
+                  }
+                  setNewCategory('');
+                }
+              }}
+              className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-brand-orange text-sm font-semibold text-gray-800" 
+            />
+            <button 
+              onClick={() => {
+                if (newCategory.trim() && !expenseCategories.includes(newCategory.trim())) {
+                  setExpenseCategories([...expenseCategories, newCategory.trim()]);
+                  setNewCategory('');
+                }
+              }}
+              className="px-4 py-2 bg-gray-800 text-white rounded-xl text-sm font-bold flex items-center gap-1 active:scale-95 transition-transform"
+            >
+              <Plus size={16} /> যুক্ত
+            </button>
+          </div>
         </div>
       </div>
 
