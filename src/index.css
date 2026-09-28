@@ -26,15 +26,12 @@ input[type='number'] {
     size: 58mm auto;
   }
   
-  body * {
-    visibility: hidden;
+  #root {
+    display: none !important;
   }
   
   .print-receipt-container, .print-receipt-container * {
     visibility: visible;
-  }
-  .no-print {
-    display: none !important;
   }
   
   .print-receipt-container {

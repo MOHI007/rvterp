@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Receipt, CheckCircle2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
@@ -107,38 +108,41 @@ export const ExpenseModal: React.FC<Props> = ({ onClose, onSuccess }) => {
         </form>
       </div>
 
-      {/* Hidden Thermal Expense Voucher */}
-      <div className="print-receipt-container hidden text-black text-sm pb-2 pt-1 font-sans">
-        <div className="text-center mb-3">
-          <h1 className="text-xl font-bold tracking-wider leading-tight">রিভার ভিউ টার্ফ</h1>
-          <p className="font-bold text-xs mt-2 border border-black inline-block px-2 py-0.5 rounded">খরচের ভাউচার</p>
-        </div>
-        
-        <div className="space-y-1 text-xs mb-3 font-semibold">
-          <p><strong>তারিখ:</strong> {new Date().toLocaleDateString('bn-BD')}</p>
-          <p><strong>সময়:</strong> {new Date().toLocaleTimeString('bn-BD')}</p>
-        </div>
+      {/* Hidden Thermal Expense Voucher - Portaled to Body */}
+      {createPortal(
+        <div className="print-receipt-container hidden text-black text-sm pb-2 pt-1 font-sans">
+          <div className="text-center mb-3">
+            <h1 className="text-xl font-bold tracking-wider leading-tight">রিভার ভিউ টার্ফ</h1>
+            <p className="font-bold text-xs mt-2 border border-black inline-block px-2 py-0.5 rounded">খরচের ভাউচার</p>
+          </div>
+          
+          <div className="space-y-1 text-xs mb-3 font-semibold">
+            <p><strong>তারিখ:</strong> {new Date().toLocaleDateString('bn-BD')}</p>
+            <p><strong>সময়:</strong> {new Date().toLocaleTimeString('bn-BD')}</p>
+          </div>
 
-        <div className="border-t-2 border-b-2 border-dashed border-black py-2 mb-3 space-y-1 text-xs font-semibold">
-          <div className="flex justify-between text-gray-800">
-            <span>ক্যাটাগরি:</span>
-            <span>{category}</span>
+          <div className="border-t-2 border-b-2 border-dashed border-black py-2 mb-3 space-y-1 text-xs font-semibold">
+            <div className="flex justify-between text-gray-800">
+              <span>ক্যাটাগরি:</span>
+              <span>{category}</span>
+            </div>
+            <div className="flex justify-between text-gray-800">
+              <span>বিবরণ:</span>
+              <span className="text-right max-w-[60%]">{note}</span>
+            </div>
+            <div className="flex justify-between text-lg font-bold mt-2 pt-2 border-t border-black">
+              <span>মোট খরচ:</span>
+              <span>৳{toBn(amount || 0)}</span>
+            </div>
           </div>
-          <div className="flex justify-between text-gray-800">
-            <span>বিবরণ:</span>
-            <span className="text-right max-w-[60%]">{note}</span>
+          
+          <div className="mt-8 flex justify-between text-[10px] font-bold">
+            <span className="border-t border-black pt-1 px-2">ম্যানেজার স্বাক্ষর</span>
+            <span className="border-t border-black pt-1 px-2">কর্তৃপক্ষ স্বাক্ষর</span>
           </div>
-          <div className="flex justify-between text-lg font-bold mt-2 pt-2 border-t border-black">
-            <span>মোট খরচ:</span>
-            <span>৳{toBn(amount || 0)}</span>
-          </div>
-        </div>
-        
-        <div className="mt-8 flex justify-between text-[10px] font-bold">
-          <span className="border-t border-black pt-1 px-2">ম্যানেজার স্বাক্ষর</span>
-          <span className="border-t border-black pt-1 px-2">কর্তৃপক্ষ স্বাক্ষর</span>
-        </div>
-      </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 };

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { type Booking } from '../types';
@@ -82,15 +83,17 @@ export const Receipt: React.FC<ReceiptProps> = ({ booking }) => {
     </div>
   );
 
-  return (
+  const receiptContent = (
     <div className="print-receipt-container hidden">
       <ReceiptBlock title="গ্রাহক কপি" />
       {settings?.print_office_copy !== false && (
         <>
-          <div className="border-b-2 border-dashed border-black my-2"></div>
+          <div className="border-b-[3px] border-dashed border-black my-8"></div>
           <ReceiptBlock title="অফিস কপি" />
         </>
       )}
     </div>
   );
+
+  return createPortal(receiptContent, document.body);
 };
