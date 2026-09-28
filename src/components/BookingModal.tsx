@@ -21,6 +21,8 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selecte
   const [hours, setHours] = useState(1);
   const [discount, setDiscount] = useState('');
   const [advance, setAdvance] = useState('');
+  const [advanceMethod, setAdvanceMethod] = useState<'Cash' | 'bKash' | 'Nagad'>('Cash');
+  const [advanceTrxId, setAdvanceTrxId] = useState('');
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -33,6 +35,13 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selecte
     
     setPhone(raw);
     setPhoneError('');
+  };
+
+  const handleTrxIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let raw = e.target.value.replace(/[^0-9০-৯]/g, '');
+    raw = raw.replace(/[0-9]/g, d => "০১২৩৪৫৬৭৮৯"[parseInt(d)]);
+    raw = raw.slice(0, 4);
+    setAdvanceTrxId(raw);
   };
 
   const basePrice = initialSlot.price * hours;
@@ -86,6 +95,11 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selecte
       return;
     }
     
+    if (parsedAdvance > 0 && advanceMethod !== 'Cash' && advanceTrxId.length !== 4) {
+      setErrorMsg('বিকাশ/নগদ এর ক্ষেত্রে নাম্বার এর শেষ ৪ ডিজিট দেওয়া বাধ্যতামূলক।');
+      return;
+    }
+    
     setIsSubmitting(true);
     try {
       const finalName = name.trim() || 'অজানা গ্রাহক';
@@ -130,7 +144,8 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selecte
       if ((parseInt(advance) || 0) > 0 && booking) {
         await supabase.from('payments').insert({
           booking_id: booking.id,
-          method: 'Cash', // Default
+          method: advanceMethod,
+          last_4_digits: advanceMethod !== 'Cash' ? advanceTrxId : null,
           amount: parseInt(advance),
           type: 'Advance'
         });
@@ -242,13 +257,50 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selecte
             </div>
 
             <div className="pt-2">
-              <label className="block text-sm text-gray-500 mb-1">অগ্রিম জমা (ক্যাশ)</label>
+              <label className="block text-sm text-gray-500 mb-1">অগ্রিম জমা</label>
               <input 
                 type="number" required={settings?.force_advance_payment} placeholder="৳ 0" min="0" onKeyDown={(e) => e.key === '-' && e.preventDefault()}
                 value={advance} onChange={(e) => setAdvance(e.target.value)}
                 className="w-full px-4 py-3 bg-white border border-brand-orange rounded-xl focus:ring-2 focus:ring-brand-orange outline-none text-xl font-bold text-brand-orange text-center shadow-sm"
               />
             </div>
+
+            {(parseInt(advance) || 0) > 0 && (
+              <div className="pt-2 space-y-3 animate-in fade-in slide-in-from-top-2">
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">পেমেন্ট মেথড</label>
+                  <div className="flex gap-2">
+                    {['Cash', 'bKash', 'Nagad'].map((method) => (
+                      <button
+                        key={method}
+                        type="button"
+                        onClick={() => { setAdvanceMethod(method as any); setAdvanceTrxId(''); }}
+                        className={`flex-1 py-2 text-sm font-bold rounded-lg border-2 transition-all ${
+                          advanceMethod === method 
+                            ? 'border-brand-orange bg-orange-50 text-brand-orange' 
+                            : 'border-gray-200 bg-white text-gray-500'
+                        }`}
+                      >
+                        {method === 'Cash' ? 'ক্যাশ' : method === 'bKash' ? 'বিকাশ' : 'নগদ'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {advanceMethod !== 'Cash' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500 mb-1">TrxID (শেষ ৪ ডিজিট)</label>
+                    <input 
+                      type="tel" required placeholder="XXXX"
+                      value={advanceTrxId} onChange={handleTrxIdChange} maxLength={4}
+                      className={`w-full px-4 py-3 bg-white border-2 rounded-xl focus:ring-brand-orange outline-none text-center font-bold tracking-widest ${
+                        advanceTrxId.length === 4 ? 'border-green-500' : 'border-red-400'
+                      }`}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="flex justify-between items-center text-red-500 pt-2 text-lg">
               <span>বকেয়া:</span>
