@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { PnLCard } from './PnLCard';
 import { SettingsTab } from './SettingsTab';
 import { CustomerListTab } from './CustomerListTab';
+import { BkashIcon } from './icons/BkashIcon';
 
 export const AdminDashboard: React.FC<{ onSwitchToPOS: () => void }> = ({ onSwitchToPOS }) => {
   const { logout, user } = useAuth();
@@ -213,7 +214,7 @@ export const AdminDashboard: React.FC<{ onSwitchToPOS: () => void }> = ({ onSwit
                 </div>
                 <div className="bg-gray-50 border border-gray-200 p-2 rounded-xl flex flex-col justify-center gap-1.5">
                   <div className="flex items-center justify-between text-pink-500">
-                    <Smartphone size={15} />
+                    <BkashIcon size={18} />
                     <span className="font-bold text-sm">৳{toBn(todayBkash)}</span>
                   </div>
                   <div className="flex items-center justify-between text-orange-500">

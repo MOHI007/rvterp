@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Calculator, Smartphone } from 'lucide-react';
+import { BkashIcon } from './icons/BkashIcon';
 
 export const PnLCard: React.FC = () => {
   const [revenue, setRevenue] = useState(0);
@@ -89,7 +90,7 @@ export const PnLCard: React.FC = () => {
         </div>
         <div className="bg-gray-800 border border-gray-700 p-2 rounded-xl flex flex-col justify-center gap-1.5">
           <div className="flex items-center justify-between text-pink-400">
-            <Smartphone size={15} />
+            <BkashIcon size={18} />
             <span className="font-bold text-sm">৳{toBn(bkashTotal)}</span>
           </div>
           <div className="flex items-center justify-between text-orange-400">
