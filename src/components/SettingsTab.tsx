@@ -13,6 +13,7 @@ export const SettingsTab: React.FC = () => {
   const [maxDiscountDay, setMaxDiscountDay] = useState(500);
   const [receiptFooterText, setReceiptFooterText] = useState('দয়া করে টার্ফ শু পরিধান করুন।');
   const [forceAdvance, setForceAdvance] = useState(false);
+  const [printOfficeCopy, setPrintOfficeCopy] = useState(true);
   
   const [isSaving, setIsSaving] = useState(false);
 
@@ -25,6 +26,7 @@ export const SettingsTab: React.FC = () => {
       setMaxDiscountDay(settings.dynamic_pricing_rules?.max_discount_per_day || 500);
       if (settings.receipt_footer_text) setReceiptFooterText(settings.receipt_footer_text);
       setForceAdvance(settings.force_advance_payment || false);
+      setPrintOfficeCopy(settings.print_office_copy ?? true);
     }
   }, [settings]);
 
@@ -40,7 +42,8 @@ export const SettingsTab: React.FC = () => {
         },
         max_discount_allowed: maxDiscountSlot,
         receipt_footer_text: receiptFooterText,
-        force_advance_payment: forceAdvance
+        force_advance_payment: forceAdvance,
+        print_office_copy: printOfficeCopy
       };
       
       const { error } = await supabase
@@ -113,6 +116,17 @@ export const SettingsTab: React.FC = () => {
           </div>
           <label className="relative inline-flex items-center cursor-pointer">
             <input type="checkbox" className="sr-only peer" checked={forceAdvance} onChange={() => setForceAdvance(!forceAdvance)} />
+            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-orange"></div>
+          </label>
+        </div>
+
+        <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+          <div>
+            <h4 className="font-bold text-sm text-gray-800">অফিস কপি প্রিন্ট করুন</h4>
+            <p className="text-[11px] text-gray-500">গ্রাহক কপির সাথে টার্ফের জন্য একটি অফিস কপি প্রিন্ট হবে</p>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" className="sr-only peer" checked={printOfficeCopy} onChange={() => setPrintOfficeCopy(!printOfficeCopy)} />
             <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-orange"></div>
           </label>
         </div>

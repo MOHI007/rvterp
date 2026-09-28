@@ -43,6 +43,7 @@ export interface AppSettings {
   max_discount_allowed: number;
   receipt_footer_text?: string;
   force_advance_payment?: boolean;
+  print_office_copy?: boolean;
 }
 
 export const generateDailySlots = (settings?: AppSettings): Slot[] => {

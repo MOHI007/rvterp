@@ -85,8 +85,12 @@ export const Receipt: React.FC<ReceiptProps> = ({ booking }) => {
   return (
     <div className="print-receipt-container hidden">
       <ReceiptBlock title="গ্রাহক কপি" />
-      <div className="border-b-2 border-dashed border-black my-2"></div>
-      <ReceiptBlock title="অফিস কপি" />
+      {settings?.print_office_copy !== false && (
+        <>
+          <div className="border-b-2 border-dashed border-black my-2"></div>
+          <ReceiptBlock title="অফিস কপি" />
+        </>
+      )}
     </div>
   );
 };

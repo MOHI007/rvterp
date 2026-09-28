@@ -14,14 +14,13 @@ export const PnLCard: React.FC = () => {
 
   useEffect(() => {
     const fetchPnL = async () => {
-      const startOfMonth = new Date();
-      startOfMonth.setDate(1);
-      startOfMonth.setHours(0,0,0,0);
-      const startStr = startOfMonth.toISOString();
+      const now = new Date();
+      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString();
 
-      const { data: payments } = await supabase.from('payments').select('*').gte('created_at', startStr);
-      const { data: exps } = await supabase.from('expenses').select('amount').gte('created_at', startStr);
-      const { data: bookings } = await supabase.from('bookings').select('discount, id').gte('date', startOfMonth.toISOString().split('T')[0]);
+      const { data: payments } = await supabase.from('payments').select('*').gte('created_at', firstDay).lte('created_at', lastDay);
+      const { data: exps } = await supabase.from('expenses').select('amount').gte('created_at', firstDay).lte('created_at', lastDay);
+      const { data: bookings } = await supabase.from('bookings').select('discount, id').gte('date', firstDay).lte('date', lastDay).neq('status', 'cancelled');
 
       let rev = 0;
       let cTotal = 0;
