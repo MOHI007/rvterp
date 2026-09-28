@@ -62,10 +62,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       .select('id')
       .eq('manager_id', data.id)
       .eq('status', 'open')
-      .single();
+      .maybeSingle();
       
     if (shiftData) {
       setActiveShiftId(shiftData.id);
+    } else {
+      // Auto-start a new shift
+      const { data: newShift, error: shiftError } = await supabase
+        .from('shifts')
+        .insert({ manager_id: data.id })
+        .select('id')
+        .single();
+        
+      if (!shiftError && newShift) {
+        setActiveShiftId(newShift.id);
+      } else {
+        console.error('Failed to create shift', shiftError);
+      }
     }
     
     return true;
