@@ -52,16 +52,18 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selecte
   const dueAmount = Math.max(0, netAmount - (parseInt(advance) || 0));
 
   const toBn = (num: number | string) => num.toString().replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[parseInt(d)]);
+  const toEn = (str: string) => str.replace(/[০-৯]/g, d => '0123456789'['০১২৩৪৫৬৭৮৯'.indexOf(d)]);
 
   // Auto-lookup customer
   useEffect(() => {
     if (phone.length === 11) {
       const fetchCustomer = async () => {
+        const enPhone = toEn(phone);
         const { data } = await supabase
           .from('customers')
           .select('*')
-          .eq('phone_number', phone)
-          .single();
+          .or(`phone_number.eq.${phone},phone_number.eq.${enPhone}`)
+          .maybeSingle();
         
         if (data) {
           setCustomerInfo(data);
@@ -209,8 +211,9 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selecte
                 <input 
                   type="text" placeholder="নাম লিখুন"
                   value={name} onChange={(e) => setName(e.target.value)}
-                  className="w-full pl-10 pr-3 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-orange outline-none transition-all font-semibold"
+                  className={`w-full pl-10 pr-10 py-3 bg-gray-50 border ${customerInfo ? 'border-green-500 ring-1 ring-green-500' : 'border-gray-200'} rounded-xl focus:ring-2 focus:ring-brand-orange outline-none transition-all font-semibold`}
                 />
+                {customerInfo && <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 text-green-500" size={18} />}
               </div>
               {customerInfo && (
                 <p className="text-xs text-green-600 font-semibold mt-1">

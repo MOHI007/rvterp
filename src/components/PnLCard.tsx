@@ -5,6 +5,10 @@ import { Calculator } from 'lucide-react';
 export const PnLCard: React.FC = () => {
   const [revenue, setRevenue] = useState(0);
   const [expenses, setExpenses] = useState(0);
+  const [totalMatches, setTotalMatches] = useState(0);
+  const [totalDiscount, setTotalDiscount] = useState(0);
+  const [cashTotal, setCashTotal] = useState(0);
+  const [digitalTotal, setDigitalTotal] = useState(0);
   
   const toBn = (num: number | string) => num.toString().replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[parseInt(d)]);
 
@@ -15,17 +19,32 @@ export const PnLCard: React.FC = () => {
       startOfMonth.setHours(0,0,0,0);
       const startStr = startOfMonth.toISOString();
 
-      const { data: payments } = await supabase.from('payments').select('amount').gte('created_at', startStr);
+      const { data: payments } = await supabase.from('payments').select('*').gte('created_at', startStr);
       const { data: exps } = await supabase.from('expenses').select('amount').gte('created_at', startStr);
+      const { data: bookings } = await supabase.from('bookings').select('discount, id').gte('date', startOfMonth.toISOString().split('T')[0]);
 
       let rev = 0;
-      payments?.forEach(p => rev += p.amount);
+      let cTotal = 0;
+      let dTotal = 0;
+      
+      payments?.forEach(p => {
+        rev += p.amount;
+        if (p.method === 'Cash') cTotal += p.amount;
+        else dTotal += p.amount;
+      });
 
       let exp = 0;
       exps?.forEach(e => exp += e.amount);
+      
+      let disc = 0;
+      bookings?.forEach(b => disc += (b.discount || 0));
 
       setRevenue(rev);
       setExpenses(exp);
+      setTotalMatches(bookings?.length || 0);
+      setTotalDiscount(disc);
+      setCashTotal(cTotal);
+      setDigitalTotal(dTotal);
     };
     fetchPnL();
   }, []);
@@ -50,6 +69,25 @@ export const PnLCard: React.FC = () => {
       <div className="bg-brand-orange/20 border border-brand-orange/30 p-3 rounded-xl flex justify-between items-center text-lg">
         <span className="font-bold text-orange-100">নীট লাভ (Net Profit):</span>
         <span className="font-bold text-brand-orange text-2xl">৳{toBn(profit)}</span>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 text-sm mt-4">
+        <div className="bg-gray-800 border border-gray-700 p-3 rounded-xl">
+          <p className="text-gray-400 text-xs">মোট ম্যাচ</p>
+          <p className="text-lg font-bold">{toBn(totalMatches)}</p>
+        </div>
+        <div className="bg-gray-800 border border-gray-700 p-3 rounded-xl">
+          <p className="text-gray-400 text-xs">মোট ছাড়</p>
+          <p className="text-lg font-bold text-brand-amber">৳{toBn(totalDiscount)}</p>
+        </div>
+        <div className="bg-gray-800 border border-gray-700 p-3 rounded-xl">
+          <p className="text-gray-400 text-xs">ক্যাশ কালেকশন</p>
+          <p className="text-lg font-bold text-green-400">৳{toBn(cashTotal)}</p>
+        </div>
+        <div className="bg-gray-800 border border-gray-700 p-3 rounded-xl">
+          <p className="text-gray-400 text-xs">ডিজিটাল (বিকাশ/নগদ)</p>
+          <p className="text-lg font-bold text-blue-400">৳{toBn(digitalTotal)}</p>
+        </div>
       </div>
     </div>
   );
