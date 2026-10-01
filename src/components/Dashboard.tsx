@@ -111,25 +111,30 @@ export const Dashboard: React.FC = () => {
           </div>
           
           <div className="flex items-center gap-3 flex-shrink-0">
+            {/* Print Button (Manager's Daily Report) */}
             <button 
               onClick={() => setIsPrintingReport(true)} 
               title="আজকের হিসাব প্রিন্ট করুন"
-              className={`p-2.5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-full shadow-sm backdrop-blur-sm transition-all flex items-center justify-center active:scale-95 ${isPrintingReport ? 'opacity-50 cursor-wait' : ''}`}
+              className={`w-10 h-10 bg-white/20 hover:bg-white/30 border border-white/30 rounded-full shadow-sm backdrop-blur-sm transition-all flex items-center justify-center ${isPrintingReport ? 'opacity-50 cursor-wait' : ''}`}
               disabled={isPrintingReport}
             >
               <Printer size={18} />
             </button>
+            
+            {/* Expense Button */}
             <button 
               onClick={() => setShowExpense(true)} 
               title="খরচ যোগ করুন"
-              className="p-2.5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-full shadow-sm backdrop-blur-sm transition-all flex items-center justify-center active:scale-95"
+              className="w-10 h-10 bg-white/20 hover:bg-white/30 border border-white/30 rounded-full shadow-sm backdrop-blur-sm transition-all flex items-center justify-center"
             >
               <Wallet size={18} />
             </button>
+            
+            {/* Logout Button */}
             <button 
               onClick={logout} 
               title="লগআউট"
-              className="p-2.5 bg-white/10 hover:bg-red-500/50 border border-white/20 rounded-full shadow-sm backdrop-blur-sm transition-all flex items-center justify-center active:scale-95"
+              className="w-10 h-10 bg-white/20 hover:bg-white/30 border border-white/30 rounded-full shadow-sm backdrop-blur-sm transition-all flex items-center justify-center"
             >
               <LogOut size={18} />
             </button>
