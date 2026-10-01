@@ -121,8 +121,13 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selecte
     try {
       const finalName = name.trim() || 'অজানা গ্রাহক';
       
-      // 1. Upsert Customer (Increment Total Matches)
-      const newMatchCount = isExistingCustomer ? totalMatches + 1 : 1;
+      // 1. Upsert Customer (Increment Total Matches ONLY if Fully Paid)
+      const isFullyPaid = dueAmount === 0;
+      let newMatchCount = isExistingCustomer ? totalMatches : 0;
+      if (isFullyPaid) {
+        newMatchCount += 1;
+      }
+      
       await supabase.from('customers').upsert({
         phone_number: phone,
         name: finalName,

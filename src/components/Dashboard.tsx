@@ -52,7 +52,8 @@ export const Dashboard: React.FC = () => {
   }, [selectedDate]);
 
   const changeDate = (days: number) => {
-    const d = new Date(selectedDate);
+    const [y, m, day] = selectedDate.split('-');
+    const d = new Date(parseInt(y), parseInt(m) - 1, parseInt(day));
     d.setDate(d.getDate() + days);
     setSelectedDate(getBusinessDateStr(d));
   };
@@ -127,7 +128,11 @@ export const Dashboard: React.FC = () => {
           <button onClick={() => changeDate(-1)} className="p-3 active:bg-gray-100 rounded-xl text-gray-500 transition-colors"><ChevronLeft size={22}/></button>
           <div className="font-bold flex items-center gap-2 text-brand-orange text-[15px]">
             <Calendar size={18} />
-            {new Date(selectedDate).toLocaleDateString('bn-BD', { weekday: 'long', month: 'long', day: 'numeric' })}
+            {(() => {
+              const [y, m, day] = selectedDate.split('-');
+              const d = new Date(parseInt(y), parseInt(m) - 1, parseInt(day));
+              return d.toLocaleDateString('bn-BD', { weekday: 'long', month: 'long', day: 'numeric' });
+            })()}
           </div>
           <button onClick={() => changeDate(1)} className="p-3 active:bg-gray-100 rounded-xl text-gray-500 transition-colors"><ChevronRight size={22}/></button>
         </div>
@@ -191,6 +196,9 @@ export const Dashboard: React.FC = () => {
         />
       )}
 
+      <footer className="text-center py-4 text-xs text-gray-400 font-medium no-print mt-auto">
+        Dev by Engr. A N M AL MUHI
+      </footer>
     </div>
   );
 };

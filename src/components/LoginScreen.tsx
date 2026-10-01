@@ -36,7 +36,7 @@ export const LoginScreen: React.FC = () => {
   }, [pin]);
 
   return (
-    <div className="min-h-screen bg-surface flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-surface flex flex-col items-center justify-center p-4 relative">
       <div className="w-full max-w-sm bg-white rounded-3xl shadow-xl p-8 space-y-8 text-center border border-gray-100">
         <div>
           <h1 className="text-3xl font-bold text-gray-800">স্টাফ লগইন</h1>
@@ -91,6 +91,9 @@ export const LoginScreen: React.FC = () => {
             </button>
           </div>
         </div>
+      </div>
+      <div className="absolute bottom-6 w-full text-center text-xs text-gray-500 font-medium tracking-wide">
+        Dev by Engr. A N M AL MUHI
       </div>
     </div>
   );

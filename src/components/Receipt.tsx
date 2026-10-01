@@ -79,6 +79,7 @@ export const Receipt: React.FC<ReceiptProps> = ({ booking }) => {
       <div className="text-center text-[10px] space-y-1 mt-4">
         <p className="font-bold">*** ধন্যবাদ ***</p>
         <p className="whitespace-pre-wrap">{settings?.receipt_footer_text || 'দয়া করে টার্ফ শু পরিধান করুন।'}</p>
+        <p className="pt-2 text-[9px] text-gray-500">Dev by Engr. A N M AL MUHI</p>
       </div>
     </div>
   );

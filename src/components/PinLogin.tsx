@@ -36,7 +36,7 @@ export const PinLogin: React.FC = () => {
   }, [pin]);
 
   return (
-    <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-4 select-none touch-none">
+    <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-4 select-none touch-none relative">
       <div className="w-full max-w-[280px] space-y-10 text-center">
         <div className="flex flex-col items-center gap-3">
           <div className="w-16 h-16 bg-brand-orange/20 rounded-full flex items-center justify-center">
@@ -97,6 +97,9 @@ export const PinLogin: React.FC = () => {
             </button>
           </div>
         </div>
+      </div>
+      <div className="absolute bottom-6 w-full text-center text-xs text-gray-500 font-medium tracking-wide">
+        Dev by Engr. A N M AL MUHI
       </div>
     </div>
   );

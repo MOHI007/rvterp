@@ -47,6 +47,22 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ booking, onClose, on
 
       if (bookingUpdateError) throw bookingUpdateError;
 
+      // 3. Increment Customer total_matches since the booking is now fully paid
+      if (booking.customer_phone) {
+        const { data: customerData } = await supabase
+          .from('customers')
+          .select('total_matches')
+          .eq('phone_number', booking.customer_phone)
+          .single();
+          
+        if (customerData) {
+          await supabase
+            .from('customers')
+            .update({ total_matches: (customerData.total_matches || 0) + 1 })
+            .eq('phone_number', booking.customer_phone);
+        }
+      }
+
       onSuccess();
     } catch (err) {
       console.error(err);

@@ -8,6 +8,8 @@ export const getBusinessDate = (): Date => {
 };
 
 export const getBusinessDateStr = (d: Date = getBusinessDate()): string => {
-  const offset = d.getTimezoneOffset() * 60000;
-  return new Date(d.getTime() - offset).toISOString().split('T')[0];
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };

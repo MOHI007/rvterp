@@ -102,7 +102,9 @@ export const DailyReportTab: React.FC = () => {
   };
 
   const handleCopy = () => {
-    const text = `📊 *ডেইলি রিপোর্ট* (${new Date(selectedDate).toLocaleDateString('bn-BD')})\n\n` +
+    const [y, m, day] = selectedDate.split('-');
+    const localDateStr = new Date(parseInt(y), parseInt(m) - 1, parseInt(day)).toLocaleDateString('bn-BD');
+    const text = `📊 *ডেইলি রিপোর্ট* (${localDateStr})\n\n` +
                  `আজকের আয়: ৳${toBn(revenue)}\n` +
                  `আজকের খরচ: ৳${toBn(expenseTotal)}\n` +
                  `---------------------------\n` +
@@ -157,7 +159,10 @@ export const DailyReportTab: React.FC = () => {
       <div className="hidden print:block text-center border-b border-black pb-2 mb-2">
         <h2 className="font-bold text-lg leading-tight">River View Turf</h2>
         <p className="text-sm">ডেইলি রিপোর্ট</p>
-        <p className="text-xs">তারিখ: {new Date(selectedDate).toLocaleDateString('bn-BD')}</p>
+        <p className="text-xs">তারিখ: {(() => {
+          const [y, m, day] = selectedDate.split('-');
+          return new Date(parseInt(y), parseInt(m) - 1, parseInt(day)).toLocaleDateString('bn-BD');
+        })()}</p>
       </div>
 
       {/* Summary Cards (Grid in UI, stacked in Print) */}
@@ -250,7 +255,7 @@ export const DailyReportTab: React.FC = () => {
       </div>
       
       <div className="hidden print:block text-center mt-4 border-t border-black pt-2 pb-6">
-        <p className="text-[10px]">Software by Antigravity</p>
+        <p className="text-[10px]">Dev by Engr. A N M AL MUHI</p>
       </div>
 
     </div>
