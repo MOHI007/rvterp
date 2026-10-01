@@ -110,25 +110,28 @@ export const Dashboard: React.FC = () => {
             <p className="text-sm font-medium opacity-90">{user?.name} (ম্যানেজার)</p>
           </div>
           
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center gap-3 flex-shrink-0">
             <button 
               onClick={() => setIsPrintingReport(true)} 
-              className={`px-3 py-2 bg-white/20 rounded-xl active:bg-white/30 active:scale-95 transition-all text-sm font-bold flex items-center gap-1.5 shadow-sm backdrop-blur-md ${isPrintingReport ? 'opacity-50' : ''}`}
+              title="আজকের হিসাব প্রিন্ট করুন"
+              className={`p-2.5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-full shadow-sm backdrop-blur-sm transition-all flex items-center justify-center active:scale-95 ${isPrintingReport ? 'opacity-50 cursor-wait' : ''}`}
               disabled={isPrintingReport}
             >
-              <Printer size={16} /> {isPrintingReport ? 'অপেক্ষা...' : 'রিপোর্ট'}
+              <Printer size={18} />
             </button>
             <button 
               onClick={() => setShowExpense(true)} 
-              className="px-3 py-2 bg-white/20 rounded-xl active:bg-white/30 active:scale-95 transition-all text-sm font-bold flex items-center gap-1.5 shadow-sm backdrop-blur-md"
+              title="খরচ যোগ করুন"
+              className="p-2.5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-full shadow-sm backdrop-blur-sm transition-all flex items-center justify-center active:scale-95"
             >
-              <Wallet size={16} /> খরচ
+              <Wallet size={18} />
             </button>
             <button 
               onClick={logout} 
-              className="px-3 py-2 bg-red-500/80 hover:bg-red-500 rounded-xl active:scale-95 transition-all text-sm font-bold flex items-center gap-1.5 shadow-sm backdrop-blur-md"
+              title="লগআউট"
+              className="p-2.5 bg-white/10 hover:bg-red-500/50 border border-white/20 rounded-full shadow-sm backdrop-blur-sm transition-all flex items-center justify-center active:scale-95"
             >
-              <LogOut size={16} /> লগআউট
+              <LogOut size={18} />
             </button>
           </div>
         </div>
