@@ -139,7 +139,7 @@ export const CustomerListTab: React.FC = () => {
               {/* Action Menu Button */}
               <button 
                 onClick={() => setOpenMenuId(openMenuId === customer.phone_number ? null : customer.phone_number)}
-                className="absolute top-4 right-2 p-1 text-gray-400 hover:bg-gray-100 rounded-full transition-colors z-10"
+                className="absolute top-4 right-2 p-1 text-gray-400 hover:bg-gray-100 rounded-full transition-colors"
               >
                 <MoreVertical size={20} />
               </button>

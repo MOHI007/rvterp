@@ -116,7 +116,7 @@ export const AdminDashboard: React.FC<{ onSwitchToPOS: () => void }> = ({ onSwit
   return (
     <div className="min-h-screen bg-surface flex flex-col font-sans pb-10">
       
-      <header className="bg-gray-800 text-white p-4 rounded-b-[2rem] shadow-md sticky top-0 z-10">
+      <header className="bg-gray-800 text-white p-4 rounded-b-[2rem] shadow-md sticky top-0 z-40">
         <div className="flex justify-between items-center mb-5">
           <div>
             <h1 className="text-2xl font-bold tracking-wide flex items-center gap-2"><TrendingUp size={24}/> অ্যাডমিন প্যানেল</h1>
