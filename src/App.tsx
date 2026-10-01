@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { LoginScreen } from './components/LoginScreen';
+import { PinLogin } from './components/PinLogin';
 import { Dashboard } from './components/Dashboard';
 import { AdminDashboard } from './components/AdminDashboard';
 import { Settings } from 'lucide-react';
@@ -10,11 +10,17 @@ const MainApp = () => {
   const [view, setView] = useState<'pos' | 'admin'>('pos');
 
   if (!user) {
-    return <LoginScreen />;
+    return <PinLogin />;
   }
 
-  if (user.role === 'admin' && view === 'admin') {
-    return <AdminDashboard onSwitchToPOS={() => setView('pos')} />;
+  // Strict route guard for Admin Panel
+  if (view === 'admin') {
+    if (user.role === 'admin') {
+      return <AdminDashboard onSwitchToPOS={() => setView('pos')} />;
+    } else {
+      // Force manager back to POS dashboard if they somehow bypass UI
+      setView('pos');
+    }
   }
 
   return (
