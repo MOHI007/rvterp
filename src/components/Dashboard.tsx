@@ -7,7 +7,8 @@ import { SlotCard } from './SlotCard';
 import { BookingModal } from './BookingModal';
 import { ActiveBookingDetails } from './ActiveBookingDetails';
 import { ExpenseModal } from './ExpenseModal';
-import { Calendar, ChevronLeft, ChevronRight, LogOut, Wallet } from 'lucide-react';
+import { ManagerPrintReport } from './ManagerPrintReport';
+import { Calendar, ChevronLeft, ChevronRight, LogOut, Wallet, Printer } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
   const { user, logout, settings } = useAuth();
@@ -18,6 +19,7 @@ export const Dashboard: React.FC = () => {
   const [activeSlot, setActiveSlot] = useState<Slot | null>(null);
   const [activeBooked, setActiveBooked] = useState<{ booking: Booking, slot: Slot } | null>(null);
   const [showExpense, setShowExpense] = useState(false);
+  const [isPrintingReport, setIsPrintingReport] = useState(false);
   
   // Force re-render every minute to keep past slots hiding dynamically
   const [, setTick] = useState(0);
@@ -110,6 +112,13 @@ export const Dashboard: React.FC = () => {
           
           <div className="flex items-center gap-2 flex-shrink-0">
             <button 
+              onClick={() => setIsPrintingReport(true)} 
+              className={`px-3 py-2 bg-white/20 rounded-xl active:bg-white/30 active:scale-95 transition-all text-sm font-bold flex items-center gap-1.5 shadow-sm backdrop-blur-md ${isPrintingReport ? 'opacity-50' : ''}`}
+              disabled={isPrintingReport}
+            >
+              <Printer size={16} /> {isPrintingReport ? 'অপেক্ষা...' : 'রিপোর্ট'}
+            </button>
+            <button 
               onClick={() => setShowExpense(true)} 
               className="px-3 py-2 bg-white/20 rounded-xl active:bg-white/30 active:scale-95 transition-all text-sm font-bold flex items-center gap-1.5 shadow-sm backdrop-blur-md"
             >
@@ -192,6 +201,16 @@ export const Dashboard: React.FC = () => {
           onSuccess={() => {
             setShowExpense(false);
             alert('খরচ এন্ট্রি সফল হয়েছে!');
+          }} 
+        />
+      )}
+
+      {isPrintingReport && (
+        <ManagerPrintReport 
+          date={todayStr} 
+          onReady={() => {
+            window.print();
+            setIsPrintingReport(false);
           }} 
         />
       )}
