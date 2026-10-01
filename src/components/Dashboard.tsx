@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getBusinessDateStr } from '../utils/dateUtils';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { generateDailySlots, type Slot, type Booking } from '../types';
@@ -10,12 +11,7 @@ import { Calendar, ChevronLeft, ChevronRight, LogOut, Wallet } from 'lucide-reac
 
 export const Dashboard: React.FC = () => {
   const { user, logout, settings } = useAuth();
-  const getLocalDateStr = (d: Date = new Date()) => {
-    const offset = d.getTimezoneOffset() * 60000;
-    return new Date(d.getTime() - offset).toISOString().split('T')[0];
-  };
-
-  const [selectedDate, setSelectedDate] = useState(() => getLocalDateStr());
+  const [selectedDate, setSelectedDate] = useState(() => getBusinessDateStr());
   const slots = React.useMemo(() => generateDailySlots(settings || undefined), [settings]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   
@@ -58,12 +54,12 @@ export const Dashboard: React.FC = () => {
   const changeDate = (days: number) => {
     const d = new Date(selectedDate);
     d.setDate(d.getDate() + days);
-    setSelectedDate(getLocalDateStr(d));
+    setSelectedDate(getBusinessDateStr(d));
   };
 
   const toBn = (num: number | string) => num.toString().replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[parseInt(d)]);
 
-  const todayStr = getLocalDateStr();
+  const todayStr = getBusinessDateStr();
   
   // Time-Aware Slot Filtering Logic
   const getCurrentHourBDST = () => {

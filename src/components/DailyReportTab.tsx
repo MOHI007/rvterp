@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getBusinessDateStr } from '../utils/dateUtils';
 import { createPortal } from 'react-dom';
 import { supabase } from '../lib/supabase';
 import { Calendar, Printer, Copy, FileText, ArrowDown, ArrowUp, Wallet, Download } from 'lucide-react';
@@ -6,12 +7,7 @@ import { BkashIcon } from './icons/BkashIcon';
 import { NagadIcon } from './icons/NagadIcon';
 
 export const DailyReportTab: React.FC = () => {
-  const getLocalDateStr = (d: Date = new Date()) => {
-    const offset = d.getTimezoneOffset() * 60000;
-    return new Date(d.getTime() - offset).toISOString().split('T')[0];
-  };
-
-  const [selectedDate, setSelectedDate] = useState(() => getLocalDateStr());
+  const [selectedDate, setSelectedDate] = useState(() => getBusinessDateStr());
   const [loading, setLoading] = useState(true);
   const [isGeneratingCSV, setIsGeneratingCSV] = useState(false);
   
@@ -38,8 +34,10 @@ export const DailyReportTab: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     
-    const startDate = new Date(`${selectedDate}T00:00:00`);
-    const endDate = new Date(`${selectedDate}T23:59:59`);
+    const startDate = new Date(`${selectedDate}T06:00:00`);
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + 1);
+    endDate.setHours(5, 59, 59, 999);
     
     // Handle invalid date fallback
     if (isNaN(startDate.getTime())) {
@@ -127,7 +125,7 @@ export const DailyReportTab: React.FC = () => {
       const { data: bData } = await supabase
         .from('bookings')
         .select('*')
-        .gte('date', getLocalDateStr(thirtyDaysAgo));
+        .gte('date', getBusinessDateStr(thirtyDaysAgo));
 
       if (!bData) return;
       
@@ -144,7 +142,7 @@ export const DailyReportTab: React.FC = () => {
       
       const a = document.createElement('a');
       a.href = url;
-      a.download = `monthly_report_${getLocalDateStr()}.csv`;
+      a.download = `monthly_report_${getBusinessDateStr()}.csv`;
       a.click();
     } catch (e) {
       alert("ডাউনলোড ফেইল হয়েছে।");
