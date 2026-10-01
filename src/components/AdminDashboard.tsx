@@ -16,7 +16,7 @@ export const AdminDashboard: React.FC<{ onSwitchToPOS: () => void }> = ({ onSwit
         <div className="flex justify-between items-center mb-5">
           <div>
             <h1 className="text-2xl font-bold tracking-wide flex items-center gap-2"><TrendingUp size={24}/> অ্যাডমিন প্যানেল</h1>
-            <p className="text-sm font-medium opacity-90">{user?.name}</p>
+            <p className="text-sm font-medium opacity-90">{user?.role === 'admin' ? 'অ্যাডমিন' : 'ম্যানেজার'}</p>
           </div>
           <div className="flex gap-2">
             <button onClick={onSwitchToPOS} className="p-2.5 bg-brand-orange rounded-xl active:scale-95 transition-all text-sm font-bold flex items-center gap-1 shadow-sm">

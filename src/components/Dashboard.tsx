@@ -106,7 +106,7 @@ export const Dashboard: React.FC = () => {
         <div className="flex justify-between items-center mb-5 w-full">
           <div className="flex-shrink-0">
             <h1 className="text-2xl font-bold tracking-wide">রিভার ভিউ টার্ফ</h1>
-            <p className="text-sm font-medium opacity-90">{user?.name} (ম্যানেজার)</p>
+            <p className="text-sm font-medium opacity-90">{user?.role === 'admin' ? 'অ্যাডমিন' : 'ম্যানেজার'}</p>
           </div>
           
           <div className="flex items-center gap-3 flex-shrink-0">
