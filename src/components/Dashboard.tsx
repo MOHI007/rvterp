@@ -19,7 +19,6 @@ export const Dashboard: React.FC = () => {
   const [activeSlot, setActiveSlot] = useState<Slot | null>(null);
   const [activeBooked, setActiveBooked] = useState<{ booking: Booking, slot: Slot } | null>(null);
   const [showExpense, setShowExpense] = useState(false);
-  const [isPrintingReport, setIsPrintingReport] = useState(false);
   
   // Force re-render every minute to keep past slots hiding dynamically
   const [, setTick] = useState(0);
@@ -111,32 +110,31 @@ export const Dashboard: React.FC = () => {
           </div>
           
           <div className="flex items-center gap-3 flex-shrink-0">
-            {/* Print Button (Manager's Daily Report) */}
-            <button 
-              onClick={() => setIsPrintingReport(true)} 
-              title="আজকের হিসাব প্রিন্ট করুন"
-              className={`w-10 h-10 bg-white/20 hover:bg-white/30 border border-white/30 rounded-full shadow-sm backdrop-blur-sm transition-all flex items-center justify-center ${isPrintingReport ? 'opacity-50 cursor-wait' : ''}`}
-              disabled={isPrintingReport}
-            >
-              <Printer size={18} />
-            </button>
-            
             {/* Expense Button */}
             <button 
-              onClick={() => setShowExpense(true)} 
+              onClick={() => setShowExpense(true)}
               title="খরচ যোগ করুন"
               className="w-10 h-10 bg-white/20 hover:bg-white/30 border border-white/30 rounded-full shadow-sm backdrop-blur-sm transition-all flex items-center justify-center"
             >
-              <Wallet size={18} />
+              <Wallet size={20} />
             </button>
-            
+
+            {/* Print Button (Manager Daily Print) */}
+            <button 
+              onClick={() => window.print()}
+              title="আজকের হিসাব প্রিন্ট করুন"
+              className="w-10 h-10 bg-white/20 hover:bg-white/30 border border-white/30 rounded-full shadow-sm backdrop-blur-sm transition-all flex items-center justify-center"
+            >
+              <Printer size={20} />
+            </button>
+
             {/* Logout Button */}
             <button 
-              onClick={logout} 
+              onClick={logout}
               title="লগআউট"
               className="w-10 h-10 bg-white/20 hover:bg-white/30 border border-white/30 rounded-full shadow-sm backdrop-blur-sm transition-all flex items-center justify-center"
             >
-              <LogOut size={18} />
+              <LogOut size={20} />
             </button>
           </div>
         </div>
@@ -213,15 +211,7 @@ export const Dashboard: React.FC = () => {
         />
       )}
 
-      {isPrintingReport && (
-        <ManagerPrintReport 
-          date={todayStr} 
-          onReady={() => {
-            window.print();
-            setIsPrintingReport(false);
-          }} 
-        />
-      )}
+      <ManagerPrintReport date={todayStr} />
 
       <footer className="text-center py-4 text-xs text-gray-400 font-medium no-print mt-auto">
         Dev by Engr. A N M AL MUHI

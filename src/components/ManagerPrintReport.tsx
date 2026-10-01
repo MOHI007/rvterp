@@ -1,16 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { supabase } from '../lib/supabase';
-import { BkashIcon } from './icons/BkashIcon';
-import { NagadIcon } from './icons/NagadIcon';
-import { ArrowUp, ArrowDown, Wallet, FileText } from 'lucide-react';
+
 
 interface ManagerPrintReportProps {
   date: string;
-  onReady: () => void;
 }
 
-export const ManagerPrintReport: React.FC<ManagerPrintReportProps> = ({ date, onReady }) => {
+export const ManagerPrintReport: React.FC<ManagerPrintReportProps> = ({ date }) => {
   const [bookings, setBookings] = useState<any[]>([]);
   const [expenses, setExpenses] = useState<any[]>([]);
   const [revenue, setRevenue] = useState(0);
@@ -79,15 +76,10 @@ export const ManagerPrintReport: React.FC<ManagerPrintReportProps> = ({ date, on
       setCashTotal(cash);
       setBkashTotal(bk);
       setNagadTotal(ng);
-
-      // Give DOM time to update before printing
-      setTimeout(() => {
-        onReady();
-      }, 500);
     };
 
     fetchData();
-  }, [date, onReady]);
+  }, [date]);
 
   const netCash = cashTotal - expenseTotal;
 
