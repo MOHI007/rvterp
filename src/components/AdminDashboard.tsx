@@ -10,9 +10,9 @@ export const AdminDashboard: React.FC<{ onSwitchToPOS: () => void }> = ({ onSwit
   const [activeTab, setActiveTab] = useState<'report' | 'crm' | 'settings'>('report');
 
   return (
-    <div className="min-h-screen bg-surface flex flex-col font-sans pb-10">
+    <div className="min-h-screen bg-surface flex flex-col font-sans pb-10 print:pb-0 print:bg-white">
       
-      <header className="bg-gray-800 text-white p-4 rounded-b-[2rem] shadow-md sticky top-0 z-40">
+      <header className="print:hidden bg-gray-800 text-white p-4 rounded-b-[2rem] shadow-md sticky top-0 z-40">
         <div className="flex justify-between items-center mb-5">
           <div>
             <h1 className="text-2xl font-bold tracking-wide flex items-center gap-2"><TrendingUp size={24}/> অ্যাডমিন প্যানেল</h1>
@@ -50,7 +50,7 @@ export const AdminDashboard: React.FC<{ onSwitchToPOS: () => void }> = ({ onSwit
         </div>
       </header>
 
-      <main className="flex-1 p-4 max-w-lg mx-auto w-full mt-2">
+      <main className="flex-1 p-4 max-w-lg mx-auto w-full mt-2 print:p-0 print:m-0 print:max-w-none">
         {activeTab === 'report' && <DailyReportTab />}
 
         {activeTab === 'crm' && <CustomerListTab />}
