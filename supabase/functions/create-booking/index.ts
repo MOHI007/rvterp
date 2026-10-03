@@ -79,7 +79,7 @@ serve(async (req) => {
     }
 
     const maxDiscount = numHours * (settings?.max_discount_allowed || 100);
-    if (discount > maxDiscount) {
+    if (role !== 'admin' && discount > maxDiscount) {
       return new Response(JSON.stringify({ error: `Discount exceeds max allowed (৳${maxDiscount})` }), { status: 400, headers: corsHeaders });
     }
     

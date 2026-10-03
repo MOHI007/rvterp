@@ -13,7 +13,7 @@ interface BookingModalProps {
 }
 
 export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selectedDate, onClose, onSuccess, existingGroupBookings }) => {
-  const { settings } = useAuth();
+  const { settings, user } = useAuth();
   
   const primaryBooking = existingGroupBookings?.[0];
   
@@ -104,7 +104,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selecte
       return;
     }
 
-    if (parsedDiscount > maxDiscount) {
+    if (user?.role !== 'admin' && parsedDiscount > maxDiscount) {
       setErrorMsg(`সর্বোচ্চ ছাড়ের সীমা ৳${toBn(maxDiscount)}!`);
       return;
     }

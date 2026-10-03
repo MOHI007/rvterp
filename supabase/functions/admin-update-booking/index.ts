@@ -82,9 +82,6 @@ serve(async (req) => {
     }
 
     const maxDiscount = numHours * (settings?.max_discount_allowed || 100);
-    if (discount > maxDiscount) {
-      return new Response(JSON.stringify({ error: `Discount exceeds max allowed (৳${maxDiscount})` }), { status: 400, headers: corsHeaders });
-    }
     
     if (discount > totalBasePrice) {
       return new Response(JSON.stringify({ error: `Discount cannot exceed total base price` }), { status: 400, headers: corsHeaders });
