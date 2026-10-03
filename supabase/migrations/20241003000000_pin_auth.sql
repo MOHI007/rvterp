@@ -52,6 +52,10 @@ BEGIN
   SELECT attempts, locked_until INTO v_attempts, v_locked_until FROM login_attempts WHERE ip = p_ip;
   IF v_locked_until > now() THEN
     RETURN jsonb_build_object('success', false, 'error', 'Too many attempts. Locked for 15 minutes.');
+  ELSIF v_locked_until IS NOT NULL AND v_locked_until <= now() THEN
+    -- Decay lockout
+    UPDATE login_attempts SET attempts = 0, locked_until = NULL WHERE ip = p_ip;
+    v_attempts := 0;
   END IF;
 
   -- Find the profile matching the PIN

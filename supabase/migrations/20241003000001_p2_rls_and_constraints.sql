@@ -9,7 +9,7 @@ BEGIN
         SELECT schemaname, tablename, policyname 
         FROM pg_policies 
         WHERE schemaname = 'public' 
-        AND tablename IN ('profiles', 'customers', 'bookings', 'payments', 'expenses', 'settings', 'app_sessions', 'receipt_counters')
+        AND tablename IN ('profiles', 'customers', 'bookings', 'payments', 'expenses', 'settings', 'app_sessions', 'receipt_counters', 'login_attempts')
     ) LOOP
         EXECUTE format('DROP POLICY IF EXISTS %I ON %I.%I', r.policyname, r.schemaname, r.tablename);
     END LOOP;
@@ -24,6 +24,7 @@ ALTER TABLE payments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE expenses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE app_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE login_attempts ENABLE ROW LEVEL SECURITY;
 
 -- Create receipt_counters table if not exists before enabling RLS
 CREATE TABLE IF NOT EXISTS receipt_counters (

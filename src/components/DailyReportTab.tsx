@@ -18,6 +18,7 @@ export const DailyReportTab: React.FC = () => {
   const [sameDayRev, setSameDayRev] = useState(0);
   const [futureRev, setFutureRev] = useState(0);
   const [pastRev, setPastRev] = useState(0);
+  const [otherRev, setOtherRev] = useState(0);
   const [expenseTotal, setExpenseTotal] = useState(0);
   const [cashTotal, setCashTotal] = useState(0);
   const [bkashTotal, setBkashTotal] = useState(0);
@@ -75,7 +76,7 @@ export const DailyReportTab: React.FC = () => {
     setExpenses(eData || []);
     
     let rev = 0; let cash = 0; let bk = 0; let ng = 0;
-    let sdRev = 0; let fRev = 0; let pRev = 0;
+    let sdRev = 0; let fRev = 0; let pRev = 0; let oRev = 0;
     pData?.forEach(p => {
       rev += p.amount;
       if (p.method === 'Cash') cash += p.amount;
@@ -86,6 +87,7 @@ export const DailyReportTab: React.FC = () => {
       if (bDate === selectedDate) sdRev += p.amount;
       else if (bDate && bDate > selectedDate) fRev += p.amount;
       else if (bDate && bDate < selectedDate) pRev += p.amount;
+      else oRev += p.amount;
     });
 
     let exp = 0;
@@ -95,6 +97,7 @@ export const DailyReportTab: React.FC = () => {
     setSameDayRev(sdRev);
     setFutureRev(fRev);
     setPastRev(pRev);
+    setOtherRev(oRev);
     setExpenseTotal(exp);
     setCashTotal(cash);
     setBkashTotal(bk);
@@ -121,7 +124,8 @@ export const DailyReportTab: React.FC = () => {
                  `আজকের আয়: ৳${toBn(revenue)}\n` +
                  `  - আজকের বুকিং থেকে: ৳${toBn(sameDayRev)}\n` +
                  `  - ভবিষ্যৎ বুকিংয়ের অগ্রিম: ৳${toBn(futureRev)}\n` +
-                 `  - পুরাতন বকেয়া আদায়: ৳${toBn(pastRev)}\n\n` +
+                 `  - পুরাতন বকেয়া আদায়: ৳${toBn(pastRev)}\n` +
+                 (otherRev > 0 ? `  - অন্যান্য: ৳${toBn(otherRev)}\n` : '') + `\n` +
                  `আজকের খরচ: ৳${toBn(expenseTotal)}\n` +
                  `---------------------------\n` +
                  `মোট ক্যাশ কালেকশন: ৳${toBn(cashTotal)}\n` +
@@ -194,6 +198,7 @@ export const DailyReportTab: React.FC = () => {
             <div className="flex justify-between"><span>আজকের বুকিং:</span><span>৳{toBn(sameDayRev)}</span></div>
             <div className="flex justify-between"><span>ভবিষ্যৎ অগ্রিম:</span><span>৳{toBn(futureRev)}</span></div>
             <div className="flex justify-between"><span>পুরাতন বকেয়া:</span><span>৳{toBn(pastRev)}</span></div>
+            {otherRev > 0 && <div className="flex justify-between"><span>অন্যান্য:</span><span>৳{toBn(otherRev)}</span></div>}
           </div>
         </div>
         <div className="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 print:border-none print:shadow-none print:p-0 print:flex print:justify-between print:bg-transparent">

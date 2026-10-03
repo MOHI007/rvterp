@@ -23,6 +23,9 @@ serve(async (req) => {
 
     const clientIp = req.headers.get('x-forwarded-for') || 'unknown';
 
+    const clientIpList = clientIp === 'unknown' ? ['127.0.0.1'] : clientIp.split(',');
+    const realIp = clientIpList[clientIpList.length - 1].trim();
+
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -30,7 +33,7 @@ serve(async (req) => {
 
     const { data, error } = await supabaseClient.rpc('verify_pin_rpc', { 
       p_pin: pin, 
-      p_ip: clientIp === 'unknown' ? '127.0.0.1' : clientIp.split(',')[0].trim() 
+      p_ip: realIp 
     });
 
     if (error) {
