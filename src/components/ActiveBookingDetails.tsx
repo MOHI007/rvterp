@@ -46,9 +46,9 @@ export const ActiveBookingDetails: React.FC<Props> = ({ booking, slot, duration 
 
       if (error || !data?.success) throw new Error(data?.error || error?.message);
       onRefresh();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Time update failed:', err);
-      alert('সময় আপডেট করা যায়নি।');
+      alert(err.message || 'সময় আপডেট করা যায়নি।');
     } finally {
       setIsUpdatingTime(false);
     }
@@ -78,9 +78,9 @@ export const ActiveBookingDetails: React.FC<Props> = ({ booking, slot, duration 
       alert("বুকিং বাতিল এবং ক্রেডিট সেভ সফল হয়েছে!");
       onRefresh();
       onClose();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert('বাতিল করতে সমস্যা হয়েছে।');
+      alert(err.message || 'বাতিল করতে সমস্যা হয়েছে।');
     } finally {
       setIsUpdatingTime(false);
     }

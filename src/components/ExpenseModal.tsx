@@ -47,9 +47,9 @@ export const ExpenseModal: React.FC<Props> = ({ onClose, onSuccess }) => {
       } else {
         onSuccess();
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      alert('খরচ এন্ট্রি করতে সমস্যা হয়েছে।');
+      alert(error.message || 'খরচ এন্ট্রি করতে সমস্যা হয়েছে।');
     } finally {
       setIsSubmitting(false);
     }

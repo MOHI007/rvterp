@@ -58,8 +58,6 @@ export const DailyReportTab: React.FC = () => {
       return;
     }
 
-    console.log("Daily Report Fetching Date:", selectedDate);
-
     // Fetch exactly like Dashboard for bookings to bypass RLS
     const dayRes = await supabase.functions.invoke('get-day', {
       headers: { 'x-session-token': localStorage.getItem('session_token') || '' },
@@ -88,8 +86,6 @@ export const DailyReportTab: React.FC = () => {
     } else if (reportRes?.data?.bookings) {
       bData = reportRes.data.bookings;
     }
-
-    console.log("Fetched Bookings:", bData);
 
     setBookings(bData);
 

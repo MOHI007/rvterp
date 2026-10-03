@@ -49,9 +49,9 @@ export const IncomeModal: React.FC<Props> = ({ onClose, onSuccess, incomeToEdit 
       if (error || !data?.success) throw new Error(data?.error || error?.message);
       
       onSuccess();
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      alert('আয় এন্ট্রি করতে সমস্যা হয়েছে।');
+      alert(error.message || 'আয় এন্ট্রি করতে সমস্যা হয়েছে।');
     } finally {
       setIsSubmitting(false);
     }
