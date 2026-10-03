@@ -57,18 +57,25 @@ export const DailyReportTab: React.FC = () => {
       return;
     }
 
-    const { data, error } = await supabase.functions.invoke('get-daily-report', {
-      headers: { 'x-session-token': localStorage.getItem('session_token') || '' },
-      body: { date: selectedDate }
-    });
+    const [dayRes, reportRes] = await Promise.all([
+      supabase.functions.invoke('get-day', {
+        headers: { 'x-session-token': localStorage.getItem('session_token') || '' },
+        body: { date: selectedDate }
+      }),
+      supabase.functions.invoke('get-daily-report', {
+        headers: { 'x-session-token': localStorage.getItem('session_token') || '' },
+        body: { date: selectedDate }
+      })
+    ]);
 
-    if (error || !data?.success) {
-      console.error(error || data?.error);
+    if (reportRes.error || !reportRes.data?.success) {
+      console.error(reportRes.error || reportRes.data?.error);
       setLoading(false);
       return;
     }
 
-    const { bookings: bData, payments: pData, expenses: eData, incomes: iData } = data;
+    const { payments: pData, expenses: eData, incomes: iData } = reportRes.data;
+    const bData = dayRes.data?.bookings || reportRes.data.bookings || [];
     
     setBookings(bData || []);
     setExpenses(eData || []);
