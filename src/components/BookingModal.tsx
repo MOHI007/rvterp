@@ -104,6 +104,16 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selecte
       return;
     }
 
+    if (parsedDiscount < 0) {
+      setErrorMsg("ডিসকাউন্ট ০-এর চেয়ে কম হতে পারে না!");
+      return;
+    }
+
+    if (parsedDiscount > basePrice) {
+      setErrorMsg("ডিসকাউন্ট মোট বিলের চেয়ে বেশি হতে পারে না!");
+      return;
+    }
+
     if (user?.role !== 'admin' && parsedDiscount > maxDiscount) {
       setErrorMsg(`সর্বোচ্চ ছাড়ের সীমা ৳${toBn(maxDiscount)}!`);
       return;

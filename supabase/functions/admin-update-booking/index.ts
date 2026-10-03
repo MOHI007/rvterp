@@ -28,7 +28,7 @@ serve(async (req) => {
     const advance = Number(rawAdvance) || 0;
     const numHours = parseInt(hours);
 
-    if (discount < 0) return new Response(JSON.stringify({ error: 'Discount cannot be negative' }), { status: 400, headers: corsHeaders });
+    if (discount < 0) throw new Error('Discount cannot be negative');
     if (advance < 0) return new Response(JSON.stringify({ error: 'Advance cannot be negative' }), { status: 400, headers: corsHeaders });
     if (numHours < 1 || numHours > 22) return new Response(JSON.stringify({ error: 'Hours must be between 1 and 22' }), { status: 400, headers: corsHeaders });
     if (advance > 0 && advanceMethod !== 'Cash' && (!advanceTrxId || advanceTrxId.length !== 4)) {
@@ -84,7 +84,7 @@ serve(async (req) => {
     const maxDiscount = numHours * (settings?.max_discount_allowed || 100);
     
     if (discount > totalBasePrice) {
-      return new Response(JSON.stringify({ error: `Discount cannot exceed total base price` }), { status: 400, headers: corsHeaders });
+      throw new Error('Discount cannot exceed the total price');
     }
 
     if (settings?.force_advance_payment && advance <= 0) {
