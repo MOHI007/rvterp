@@ -193,19 +193,53 @@ export const Dashboard: React.FC = () => {
         </div>
         
         <div className="grid grid-cols-1 gap-3">
-          {visibleSlots.map(slot => {
-            const info = getSlotBookingInfo(slot);
-            return (
-              <SlotCard 
-                key={slot.id} 
-                slot={slot} 
-                bookingInfo={info}
-                onBook={(s) => setActiveSlot({slot: s})}
-                onViewBooking={(booking, s) => setActiveBooked({ booking, slot: s, duration: info?.duration || 1, groupBookings: info?.groupBookings || [] })}
-                onEditBooking={(group) => setActiveSlot({slot, existingGroup: group})}
-              />
-            );
-          })}
+          {(() => {
+            const elements: React.ReactNode[] = [];
+            let skipUntil = -1;
+
+            visibleSlots.forEach((slot, index) => {
+              if (index < skipUntil) return; // Skip because it's merged
+
+              const info = getSlotBookingInfo(slot);
+              
+              if (info && info.duration > 1) {
+                // Determine how many visual slots to skip
+                // info.duration represents how many slots this booking spans
+                skipUntil = index + info.duration;
+              }
+
+              // Build a dynamic time label for merged slots
+              let timeLabel = slot.timeLabel;
+              if (info && info.duration > 1) {
+                const lastSlot = info.groupBookings[info.groupBookings.length - 1];
+                const start12 = slot.timeLabel.split(' - ')[0]; // Extract 7:00 PM
+                
+                // Format the end time
+                const [h, m] = lastSlot.end_time.split(':');
+                let hr = parseInt(h);
+                const ampm = hr >= 12 ? 'PM' : 'AM';
+                hr = hr % 12 || 12;
+                const end12 = `${toBn(hr)}:${toBn(m)} ${ampm}`;
+                
+                timeLabel = `${start12} - ${end12}`;
+              }
+
+              const displaySlot = { ...slot, timeLabel };
+
+              elements.push(
+                <SlotCard 
+                  key={slot.id} 
+                  slot={displaySlot} 
+                  bookingInfo={info}
+                  onBook={(s) => setActiveSlot({slot: s})}
+                  onViewBooking={(booking, s) => setActiveBooked({ booking, slot: s, duration: info?.duration || 1, groupBookings: info?.groupBookings || [] })}
+                  onEditBooking={(group) => setActiveSlot({slot, existingGroup: group})}
+                />
+              );
+            });
+
+            return elements;
+          })()}
         </div>
       </main>
 

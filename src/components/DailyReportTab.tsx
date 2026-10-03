@@ -6,6 +6,7 @@ import { Calendar, Printer, Copy, FileText, ArrowDown, ArrowUp, Wallet, Download
 import { useAuth } from '../context/AuthContext';
 import { IncomeModal } from './IncomeModal';
 import { BookingModal } from './BookingModal';
+import { groupConsecutiveBookings } from '../utils/bookingUtils';
 import { BkashIcon } from './icons/BkashIcon';
 import { NagadIcon } from './icons/NagadIcon';
 
@@ -333,38 +334,7 @@ export const DailyReportTab: React.FC = () => {
         ) : (
           <div className="space-y-3 print:space-y-1">
             {(() => {
-              // Group multi-hour bookings
-              const groupMap = new Map();
-              const getSlotValue = (timeStr: string) => {
-                const h = parseInt(timeStr.split(':')[0]);
-                return h < 6 ? h + 24 : h;
-              };
-
-              bookings.forEach(b => {
-                const groupId = b.booking_group_id || b.id;
-                if (!groupMap.has(groupId)) {
-                  groupMap.set(groupId, [b]);
-                } else {
-                  groupMap.get(groupId).push(b);
-                }
-              });
-
-              const groupedBookings = Array.from(groupMap.values()).map(group => {
-                // Sort chronologically relative to 6 AM business day start
-                group.sort((a: any, b: any) => getSlotValue(a.start_time) - getSlotValue(b.start_time));
-                
-                const firstSlot = group[0];
-                const lastSlot = group[group.length - 1];
-                
-                return {
-                  ...firstSlot,
-                  end_time: lastSlot.end_time,
-                  total_price: group.reduce((sum: number, b: any) => sum + Number(b.total_price || 0), 0),
-                  discount: group.reduce((sum: number, b: any) => sum + Number(b.discount || 0), 0),
-                  due_amount: group.reduce((sum: number, b: any) => sum + Number(b.due_amount || 0), 0),
-                  raw_group: group
-                };
-              });
+              const groupedBookings = groupConsecutiveBookings(bookings);
 
               return groupedBookings.map(b => (
                 <div key={b.id} className="flex justify-between items-center border-b border-gray-50 pb-2 last:border-0 last:pb-0 print:border-dashed print:border-gray-400">
