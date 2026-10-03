@@ -3,9 +3,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- add new columns
 ALTER TABLE profiles 
-ADD COLUMN IF NOT EXISTS pin_hash text,
-ADD COLUMN IF NOT EXISTS failed_attempts int DEFAULT 0,
-ADD COLUMN IF NOT EXISTS locked_until timestamptz;
+ADD COLUMN IF NOT EXISTS pin_hash text;
 
 -- backfill pin_hash
 UPDATE profiles 
@@ -25,17 +23,33 @@ CREATE TABLE IF NOT EXISTS app_sessions (
   created_at timestamptz DEFAULT now()
 );
 
+-- Create login_attempts table for rate limiting
+CREATE TABLE IF NOT EXISTS login_attempts (
+  ip inet PRIMARY KEY,
+  attempts int DEFAULT 0,
+  locked_until timestamptz
+);
+
 -- RPC for verifying PIN
-CREATE OR REPLACE FUNCTION verify_pin_rpc(p_pin text)
+CREATE OR REPLACE FUNCTION verify_pin_rpc(p_pin text, p_ip inet)
 RETURNS jsonb
 SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
   v_profile record;
   v_token uuid;
+  v_attempts int;
+  v_locked_until timestamptz;
 BEGIN
   -- Cleanup expired sessions
   DELETE FROM app_sessions WHERE expires_at < now();
+
+  -- Check rate limit
+  SELECT attempts, locked_until INTO v_attempts, v_locked_until FROM login_attempts WHERE ip = p_ip;
+  IF v_locked_until > now() THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Too many attempts. Locked for 15 minutes.');
+  END IF;
 
   -- Find the profile matching the PIN
   SELECT * INTO v_profile
@@ -44,15 +58,18 @@ BEGIN
   LIMIT 1;
 
   IF NOT FOUND THEN
+    -- Increment attempts
+    INSERT INTO login_attempts (ip, attempts, locked_until)
+    VALUES (p_ip, 1, NULL)
+    ON CONFLICT (ip) DO UPDATE SET 
+      attempts = login_attempts.attempts + 1,
+      locked_until = CASE WHEN login_attempts.attempts + 1 >= 5 THEN now() + interval '15 minutes' ELSE NULL END;
+    
     RETURN jsonb_build_object('success', false, 'error', 'Invalid PIN');
   END IF;
 
-  IF v_profile.locked_until > now() THEN
-    RETURN jsonb_build_object('success', false, 'error', 'Account locked', 'locked_until', v_profile.locked_until);
-  END IF;
-
   -- Reset failed attempts on success
-  UPDATE profiles SET failed_attempts = 0, locked_until = NULL WHERE id = v_profile.id;
+  UPDATE login_attempts SET attempts = 0, locked_until = NULL WHERE ip = p_ip;
 
   -- Create session (12h expiry)
   INSERT INTO app_sessions (profile_id, role, expires_at)
@@ -68,3 +85,7 @@ BEGIN
   );
 END;
 $$ LANGUAGE plpgsql;
+
+-- Secure the RPC
+REVOKE ALL ON FUNCTION verify_pin_rpc(text, inet) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION verify_pin_rpc(text, inet) TO service_role;

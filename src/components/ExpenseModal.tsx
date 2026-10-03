@@ -17,6 +17,7 @@ export const ExpenseModal: React.FC<Props> = ({ onClose, onSuccess }) => {
   
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState(categories[0]);
+  const [method, setMethod] = useState('Cash');
   const [note, setNote] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -37,6 +38,7 @@ export const ExpenseModal: React.FC<Props> = ({ onClose, onSuccess }) => {
       const { error } = await supabase.from('expenses').insert({
         amount: enAmount,
         category,
+        method,
         note
       });
       if (error) throw error;
@@ -92,6 +94,18 @@ export const ExpenseModal: React.FC<Props> = ({ onClose, onSuccess }) => {
           </div>
 
           <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">পেমেন্ট মেথড</label>
+            <select 
+              value={method} onChange={(e) => setMethod(e.target.value)}
+              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-orange outline-none font-semibold"
+            >
+              <option value="Cash">Cash</option>
+              <option value="bKash">bKash</option>
+              <option value="Nagad">Nagad</option>
+            </select>
+          </div>
+
+          <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">বিবরণ</label>
             <textarea 
               rows={2} required placeholder="খরচের কারণ লিখুন..."
@@ -127,6 +141,10 @@ export const ExpenseModal: React.FC<Props> = ({ onClose, onSuccess }) => {
             <div className="flex justify-between text-gray-800">
               <span>ক্যাটাগরি:</span>
               <span>{category}</span>
+            </div>
+            <div className="flex justify-between text-gray-800">
+              <span>মেথড:</span>
+              <span>{method}</span>
             </div>
             <div className="flex justify-between text-gray-800">
               <span>বিবরণ:</span>

@@ -81,7 +81,8 @@ export const ManagerPrintReport: React.FC<ManagerPrintReportProps> = ({ date }) 
     fetchData();
   }, [date]);
 
-  const netCash = cashTotal - expenseTotal;
+  const cashExpenses = expenses.reduce((sum, e) => (e.method === 'Cash' || !e.method) ? sum + e.amount : sum, 0);
+  const netCash = cashTotal - cashExpenses;
 
   const reportContent = (
     <div className="print-area space-y-4 print:text-[12px] print:w-[58mm] print:m-0 print:p-0 print:text-black">

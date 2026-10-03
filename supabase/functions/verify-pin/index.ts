@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.117.2";
-import { checkRateLimit } from "../_shared/rate-limit.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -22,22 +21,17 @@ serve(async (req) => {
       });
     }
 
-    // Rate limiting by IP to prevent brute force
     const clientIp = req.headers.get('x-forwarded-for') || 'unknown';
-    const rateLimitCheck = checkRateLimit(clientIp);
-    if (!rateLimitCheck.allowed) {
-      return new Response(JSON.stringify({ error: 'Too many attempts. Locked for 15 minutes.' }), {
-        status: 423,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
 
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { data, error } = await supabaseClient.rpc('verify_pin_rpc', { p_pin: pin });
+    const { data, error } = await supabaseClient.rpc('verify_pin_rpc', { 
+      p_pin: pin, 
+      p_ip: clientIp === 'unknown' ? '127.0.0.1' : clientIp.split(',')[0].trim() 
+    });
 
     if (error) {
       return new Response(JSON.stringify({ error: error.message }), {
@@ -47,14 +41,11 @@ serve(async (req) => {
     }
 
     if (!data.success) {
-      rateLimitCheck.increment(); // Record the failed attempt
       return new Response(JSON.stringify({ error: data.error }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-
-    rateLimitCheck.reset(); // Reset on success
 
     return new Response(JSON.stringify(data), {
       status: 200,

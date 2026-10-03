@@ -95,7 +95,8 @@ export const DailyReportTab: React.FC = () => {
     fetchData();
   }, [selectedDate]);
 
-  const netCash = cashTotal - expenseTotal;
+  const cashExpenses = expenses.reduce((sum, e) => (e.method === 'Cash' || !e.method) ? sum + e.amount : sum, 0);
+  const netCash = cashTotal - cashExpenses;
 
   const handlePrint = () => {
     window.print();
@@ -244,7 +245,7 @@ export const DailyReportTab: React.FC = () => {
               <div key={e.id} className="flex justify-between items-center border-b border-gray-50 pb-2 last:border-0 last:pb-0 print:border-dashed print:border-gray-400">
                 <div>
                   <p className="text-xs font-bold text-gray-500 print:text-[10px]">{new Date(e.created_at).toLocaleTimeString('bn-BD', {hour: '2-digit', minute:'2-digit'})}</p>
-                  <p className="text-sm font-bold text-gray-800 print:text-[11px]">{e.category}</p>
+                  <p className="text-sm font-bold text-gray-800 print:text-[11px]">{e.category} <span className="text-[10px] text-gray-500">({e.method || 'Cash'})</span></p>
                   {e.note && <p className="text-[10px] text-gray-400 print:text-[9px]">{e.note}</p>}
                 </div>
                 <p className="text-sm font-bold text-red-500 print:text-[11px] print:text-black">৳{toBn(e.amount)}</p>
