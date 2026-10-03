@@ -35,48 +35,36 @@ export const ManagerPrintReport: React.FC<ManagerPrintReportProps> = ({ date }) 
       endDate.setDate(endDate.getDate() + 1);
       endDate.setMilliseconds(endDate.getMilliseconds() - 1);
       
-      const startIso = startDate.toISOString();
-      const endIso = endDate.toISOString();
 
-      const { data: bData } = await supabase
-        .from('bookings')
-        .select('*, customers(name)')
-        .eq('date', date)
-        .neq('status', 'cancelled')
-        .order('start_time', { ascending: true });
-        
-      const { data: pData } = await supabase
-        .from('payments')
-        .select('*')
-        .gte('created_at', startIso)
-        .lte('created_at', endIso);
-        
-      const { data: eData } = await supabase
-        .from('expenses')
-        .select('*')
-        .gte('created_at', startIso)
-        .lte('created_at', endIso)
-        .order('created_at', { ascending: true });
 
-      const { data: iData } = await supabase
-        .from('other_income')
-        .select('*')
-        .eq('business_date', date)
-        .order('created_at', { ascending: true });
+      const dayRes = await supabase.functions.invoke('get-day', {
+        headers: { 'x-session-token': localStorage.getItem('session_token') || '' },
+        body: { date }
+      }).catch(() => null);
+
+      const reportRes = await supabase.functions.invoke('get-daily-report', {
+        headers: { 'x-session-token': localStorage.getItem('session_token') || '' },
+        body: { date }
+      }).catch(() => null);
+
+      const bData = dayRes?.data?.success ? dayRes.data.bookings : (reportRes?.data?.success ? reportRes.data.bookings : []);
+      const pData = reportRes?.data?.success ? reportRes.data.payments : [];
+      const eData = reportRes?.data?.success ? reportRes.data.expenses : [];
+      const iData = reportRes?.data?.success ? reportRes.data.incomes : [];
       
       setBookings(bData || []);
       setExpenses(eData || []);
       setIncomes(iData || []);
       
       let rev = 0; let cash = 0; let bk = 0; let ng = 0;
-      pData?.forEach(p => {
+      pData?.forEach((p: any) => {
         rev += p.amount;
         if (p.method === 'Cash') cash += p.amount;
         else if (p.method === 'bKash') bk += p.amount;
         else if (p.method === 'Nagad') ng += p.amount;
       });
 
-      iData?.forEach(i => {
+      iData?.forEach((i: any) => {
         rev += i.amount;
         if (i.method === 'Cash') cash += i.amount;
         else if (i.method === 'bKash') bk += i.amount;
@@ -84,7 +72,7 @@ export const ManagerPrintReport: React.FC<ManagerPrintReportProps> = ({ date }) 
       });
 
       let exp = 0;
-      eData?.forEach(e => exp += e.amount);
+      eData?.forEach((e: any) => exp += e.amount);
 
       setRevenue(rev);
       setExpenseTotal(exp);

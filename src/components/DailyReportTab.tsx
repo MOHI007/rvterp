@@ -57,28 +57,50 @@ export const DailyReportTab: React.FC = () => {
       return;
     }
 
-    const startIso = startDate.toISOString();
-    const endIso = endDate.toISOString();
+    console.log("Daily Report Fetching Date:", selectedDate);
 
-    // 1. DIRECT SUPABASE QUERIES (per user instruction)
-    const [
-      { data: directBookings },
-      { data: directPayments },
-      { data: directExpenses },
-      { data: directIncomes }
-    ] = await Promise.all([
-      supabase.from('bookings').select('*, customers(name)').eq('date', selectedDate).neq('status', 'cancelled').order('start_time', { ascending: true }),
-      supabase.from('payments').select('*, bookings(date, status)').gte('created_at', startIso).lte('created_at', endIso),
-      supabase.from('expenses').select('*').gte('created_at', startIso).lte('created_at', endIso).order('created_at', { ascending: true }),
-      supabase.from('other_income').select('*').eq('business_date', selectedDate).order('created_at', { ascending: true })
-    ]);
+    // Fetch exactly like Dashboard for bookings to bypass RLS
+    const dayRes = await supabase.functions.invoke('get-day', {
+      headers: { 'x-session-token': localStorage.getItem('session_token') || '' },
+      body: { date: selectedDate }
+    }).catch(e => ({ error: e, data: null }));
 
-    const bData = directBookings || [];
-    const pData = directPayments || [];
-    const eData = directExpenses || [];
-    const iData = directIncomes || [];
-    
+    // Edge function for financials
+    const reportRes = await supabase.functions.invoke('get-daily-report', {
+      headers: { 'x-session-token': localStorage.getItem('session_token') || '' },
+      body: { date: selectedDate }
+    }).catch(e => ({ error: e, data: null }));
+
+    // Direct fallback (will return [] if RLS is enabled, but kept for redundancy)
+    const { data: directBookings } = await supabase
+      .from('bookings')
+      .select('*, customers(name)')
+      .eq('date', selectedDate)
+      .neq('status', 'cancelled');
+
+    // MAPPING STATE: Priority is get-day (since Dashboard uses it successfully)
+    let bData = [];
+    if (dayRes?.data?.success && dayRes.data.bookings) {
+      bData = dayRes.data.bookings;
+    } else if (directBookings && directBookings.length > 0) {
+      bData = directBookings;
+    } else if (reportRes?.data?.bookings) {
+      bData = reportRes.data.bookings;
+    }
+
+    console.log("Fetched Bookings:", bData);
+
     setBookings(bData);
+
+    const isReportFailed = reportRes.error || !reportRes?.data?.success;
+    if (isReportFailed) {
+      console.warn("Edge function get-daily-report failed or returned empty.", reportRes.error || reportRes?.data?.error);
+    }
+
+    const pData = !isReportFailed ? (reportRes.data?.payments || []) : [];
+    const eData = !isReportFailed ? (reportRes.data?.expenses || []) : [];
+    const iData = !isReportFailed ? (reportRes.data?.incomes || []) : [];
+    
     setExpenses(eData);
     setIncomes(iData);
     
