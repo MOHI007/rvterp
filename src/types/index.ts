@@ -10,6 +10,7 @@ export interface Booking {
   date: string;
   start_time: string;
   end_time: string;
+  booking_group_id?: string;
   receipt_id?: string;
   actual_check_in?: string;
   actual_check_out?: string;

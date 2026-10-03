@@ -97,6 +97,20 @@ export const Dashboard: React.FC = () => {
     return true;
   });
 
+  const getSlotBookingInfo = (slot: Slot) => {
+    const booking = bookings.find(b => b.start_time === slot.startTime);
+    if (!booking) return null;
+    
+    const groupId = booking.booking_group_id || booking.id;
+    const groupBookings = bookings.filter(b => (b.booking_group_id || b.id) === groupId).sort((a, b) => a.start_time.localeCompare(b.start_time));
+    
+    const isPrimary = groupBookings[0].id === booking.id;
+    const primaryBooking = groupBookings[0];
+    const duration = groupBookings.length;
+    
+    return { booking, isPrimary, primaryBooking, duration };
+  };
+
   const unbookedPrimeSlots = visibleSlots.filter(
     s => s.isPrime && !bookings.some(b => b.start_time === s.startTime)
   ).length;
@@ -168,15 +182,18 @@ export const Dashboard: React.FC = () => {
         </div>
         
         <div className="grid grid-cols-1 gap-3">
-          {visibleSlots.map(slot => (
-            <SlotCard 
-              key={slot.id} 
-              slot={slot} 
-              booking={bookings.find(b => b.start_time === slot.startTime)}
-              onBook={(s) => setActiveSlot(s)}
-              onViewBooking={(booking, slot) => setActiveBooked({ booking, slot })}
-            />
-          ))}
+          {visibleSlots.map(slot => {
+            const info = getSlotBookingInfo(slot);
+            return (
+              <SlotCard 
+                key={slot.id} 
+                slot={slot} 
+                bookingInfo={info}
+                onBook={(s) => setActiveSlot(s)}
+                onViewBooking={(booking, s) => setActiveBooked({ booking, slot: s })}
+              />
+            );
+          })}
         </div>
       </main>
 

@@ -25,65 +25,15 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // 1. Get Booking
-    const { data: booking, error: bError } = await supabaseClient
-      .from('bookings')
-      .select('booking_group_id, advance_paid, customer_phone, status')
-      .eq('id', booking_id)
-      .single();
+    const { data: result, error: rpcError } = await supabaseClient.rpc('cancel_booking_txn', {
+      p_booking_id: booking_id
+    });
 
-    if (bError || !booking) {
-      return new Response(JSON.stringify({ error: 'Booking not found' }), { status: 404, headers: corsHeaders });
-    }
-    if (booking.status === 'cancelled') {
-      return new Response(JSON.stringify({ error: 'Booking already cancelled' }), { status: 400, headers: corsHeaders });
+    if (rpcError) {
+      return new Response(JSON.stringify({ error: rpcError.message || 'Transaction failed' }), { status: 500, headers: corsHeaders });
     }
 
-    // Since we assigned the full advance_paid to the FIRST row in the group, we just query it from this row.
-    // However, if we cancel the group, we need to sum advance_paid for all rows just in case.
-    
-    let query = supabaseClient.from('bookings').select('id, advance_paid');
-    if (booking.booking_group_id) {
-      query = query.eq('booking_group_id', booking.booking_group_id);
-    } else {
-      query = query.eq('id', booking_id);
-    }
-
-    const { data: groupBookings } = await query;
-    let totalAdvance = 0;
-    const idsToCancel = [];
-    if (groupBookings) {
-      for (const b of groupBookings) {
-        totalAdvance += (b.advance_paid || 0);
-        idsToCancel.push(b.id);
-      }
-    }
-
-    // 2. Cancel all in group
-    const { error: cancelError } = await supabaseClient
-      .from('bookings')
-      .update({ status: 'cancelled' })
-      .in('id', idsToCancel);
-
-    if (cancelError) throw cancelError;
-
-    // 3. Credit Customer if totalAdvance > 0
-    if (totalAdvance > 0 && booking.customer_phone) {
-      const { data: customer } = await supabaseClient
-        .from('customers')
-        .select('advance_balance')
-        .eq('phone_number', booking.customer_phone)
-        .single();
-        
-      if (customer) {
-        await supabaseClient
-          .from('customers')
-          .update({ advance_balance: (customer.advance_balance || 0) + totalAdvance })
-          .eq('phone_number', booking.customer_phone);
-      }
-    }
-
-    return new Response(JSON.stringify({ success: true, credited: totalAdvance }), {
+    return new Response(JSON.stringify({ success: true, credited: result.credited }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

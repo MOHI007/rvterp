@@ -13,11 +13,23 @@ serve(async (req) => {
   }
 
   try {
-    const { profile_id, role } = await requireAuth(req);
-    const { date, start_time, hours, phone, name, discount, advance, advanceMethod, advanceTrxId } = await req.json();
+    const { role } = await requireAuth(req);
+    const { date, start_time, hours, phone, name, discount: rawDiscount, advance: rawAdvance, advanceMethod, advanceTrxId } = await req.json();
 
+    // Validation (R5)
     if (!date || !start_time || !hours || !phone) {
       return new Response(JSON.stringify({ error: 'Missing required fields' }), { status: 400, headers: corsHeaders });
+    }
+
+    const discount = Number(rawDiscount) || 0;
+    const advance = Number(rawAdvance) || 0;
+    const numHours = parseInt(hours);
+
+    if (discount < 0) return new Response(JSON.stringify({ error: 'Discount cannot be negative' }), { status: 400, headers: corsHeaders });
+    if (advance < 0) return new Response(JSON.stringify({ error: 'Advance cannot be negative' }), { status: 400, headers: corsHeaders });
+    if (numHours < 1 || numHours > 22) return new Response(JSON.stringify({ error: 'Hours must be between 1 and 22' }), { status: 400, headers: corsHeaders });
+    if (advance > 0 && advanceMethod !== 'Cash' && (!advanceTrxId || advanceTrxId.length !== 4)) {
+      return new Response(JSON.stringify({ error: 'bKash/Nagad require 4-char TrxID' }), { status: 400, headers: corsHeaders });
     }
 
     const supabaseClient = createClient(
@@ -25,20 +37,19 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // 1. Get settings for price & validations
     const { data: settings } = await supabaseClient.from('settings').select('*').limit(1).maybeSingle();
     
-    // Parse start_time to get slot prices
+    // Pricing replication (R1)
+    const dayRate = settings?.dynamic_pricing_rules?.day_rate || 600;
+    const nightRate = settings?.dynamic_pricing_rules?.night_rate || 1000;
+    const nightStartHour = settings?.dynamic_pricing_rules?.night_start_hour || 18;
+    
     const getSlotDetails = (timeStr: string) => {
       const [h, m] = timeStr.split(':');
       let hour = parseInt(h);
       
-      const isNight = hour >= 20 || hour < 6;
-      const isPrime = hour >= 16 && hour < 23; // 4pm to 11pm (23:00)
-      
-      let price = settings?.day_price || 400;
-      if (isNight && settings?.night_price) price = settings.night_price;
-      if (isPrime && settings?.prime_price) price = settings.prime_price;
+      const isPrime = hour >= nightStartHour || hour < 4;
+      const price = isPrime ? nightRate : dayRate;
       
       return { timeStr, price };
     };
@@ -48,7 +59,7 @@ serve(async (req) => {
     let currentHour = parseInt(start_time.split(':')[0]);
     let currentMin = start_time.split(':')[1];
 
-    for (let i = 0; i < hours; i++) {
+    for (let i = 0; i < numHours; i++) {
       let h = (currentHour + i) % 24;
       let timeStr = `${h.toString().padStart(2, '0')}:${currentMin}:00`;
       let nextH = (h + 1) % 24;
@@ -56,10 +67,18 @@ serve(async (req) => {
       
       const details = getSlotDetails(timeStr);
       totalBasePrice += details.price;
-      slots.push({ startTime: timeStr, endTime: endTimeStr, price: details.price });
+      
+      slots.push({ 
+        start_time: timeStr, 
+        end_time: endTimeStr, 
+        total_price: 0, 
+        discount: 0, 
+        advance_paid: 0, 
+        due_amount: 0 
+      });
     }
 
-    const maxDiscount = hours * (settings?.max_discount_allowed || 100);
+    const maxDiscount = numHours * (settings?.max_discount_allowed || 100);
     if (discount > maxDiscount) {
       return new Response(JSON.stringify({ error: `Discount exceeds max allowed (৳${maxDiscount})` }), { status: 400, headers: corsHeaders });
     }
@@ -75,101 +94,30 @@ serve(async (req) => {
     const netAmount = totalBasePrice - discount;
     const dueAmount = Math.max(0, netAmount - advance);
 
-    // Transaction via RPC for atomic receipt counter? 
-    // We can just use an RPC to get the sequence or do a quick upsert.
-    // Deno doesn't have native tx for supabase-js, so we do it sequentially.
-    
-    // 2. Check for overlaps
-    for (const slot of slots) {
-      const { data: existing } = await supabaseClient
-        .from('bookings')
-        .select('id')
-        .eq('date', date)
-        .eq('start_time', slot.startTime)
-        .neq('status', 'cancelled')
-        .limit(1)
-        .maybeSingle();
-        
-      if (existing) {
-        return new Response(JSON.stringify({ error: 'Slot already booked' }), { status: 409, headers: corsHeaders });
-      }
-    }
+    // Apply totals to the FIRST slot for group consistency
+    slots[0].total_price = totalBasePrice;
+    slots[0].discount = discount;
+    slots[0].advance_paid = advance;
+    slots[0].due_amount = dueAmount;
 
-    // 3. Upsert Customer
+    // Call RPC
     const finalName = name?.trim() || 'অজানা গ্রাহক';
-    const isFullyPaid = dueAmount === 0;
-    
-    const { data: customerData } = await supabaseClient.from('customers').select('total_matches').eq('phone_number', phone).limit(1).maybeSingle();
-    let newMatchCount = customerData ? customerData.total_matches : 0;
-    if (isFullyPaid) newMatchCount += 1;
+    const { data: result, error: rpcError } = await supabaseClient.rpc('create_booking_txn', {
+      p_date: date,
+      p_slots: slots,
+      p_customer_phone: phone,
+      p_customer_name: finalName,
+      p_advance_method: advanceMethod,
+      p_advance_trx_id: advanceTrxId,
+      p_booked_by_role: role || 'manager'
+    });
 
-    await supabaseClient.from('customers').upsert({
-      phone_number: phone,
-      name: finalName,
-      total_matches: newMatchCount
-    }, { onConflict: 'phone_number' });
-
-    // 4. Receipt Counter
-    const dateObj = new Date(date);
-    const yy = dateObj.getFullYear().toString().slice(-2);
-    const mm = (dateObj.getMonth() + 1).toString().padStart(2, '0');
-    const dd = dateObj.getDate().toString().padStart(2, '0');
-    
-    const { data: counterData } = await supabaseClient.rpc('increment_receipt_counter', { p_date: date }).single();
-    let sequence = '01';
-    if (counterData) {
-      sequence = counterData.toString().padStart(2, '0');
-    } else {
-      // Fallback if RPC fails or isn't created
-      const { count } = await supabaseClient.from('bookings').select('id', { count: 'exact', head: true }).eq('date', date);
-      sequence = ((count || 0) + 1).toString().padStart(2, '0');
-    }
-    const receiptId = `${yy}${mm}${dd}${sequence}`;
-
-    const bookingGroupId = crypto.randomUUID();
-
-    // 5. Insert Bookings
-    const insertedBookings = [];
-    for (let i = 0; i < slots.length; i++) {
-      const slot = slots[i];
-      // For multi-hour, we apply the discount and advance to the first slot, or spread it.
-      // Usually it's better to just set it on the group, but we have row-level pricing.
-      // We will put the full price/discount/advance/due on the first slot to avoid math issues, 
-      // or proportional. Let's just put the full totals on the first row for now, and 0 for rest.
-      // Wait, if we operate on the group, all group rows might need to be summed.
-      // Let's divide equally or assign to first. Let's assign full amounts to first slot, 0 to others, to keep SUM() working exactly.
-      
-      const { data: booking, error: bError } = await supabaseClient.from('bookings').insert({
-        booking_group_id: bookingGroupId,
-        receipt_id: receiptId,
-        date: date,
-        start_time: slot.startTime,
-        end_time: slot.endTime, 
-        customer_phone: phone,
-        total_price: i === 0 ? totalBasePrice : 0,
-        discount: i === 0 ? discount : 0,
-        advance_paid: i === 0 ? advance : 0,
-        due_amount: i === 0 ? dueAmount : 0,
-        status: 'confirmed',
-        booked_by_role: role || 'manager'
-      }).select().single();
-
-      if (bError) throw bError;
-      insertedBookings.push(booking);
+    if (rpcError) {
+      // Return loud 500
+      return new Response(JSON.stringify({ error: rpcError.message || 'Transaction failed' }), { status: 500, headers: corsHeaders });
     }
 
-    // 6. Insert Advance Payment
-    if (advance > 0 && insertedBookings[0]) {
-      await supabaseClient.from('payments').insert({
-        booking_id: insertedBookings[0].id,
-        method: advanceMethod,
-        last_4_digits: advanceMethod !== 'Cash' ? advanceTrxId : null,
-        amount: advance,
-        type: 'Advance'
-      });
-    }
-
-    return new Response(JSON.stringify({ success: true, booking_group_id: bookingGroupId }), {
+    return new Response(JSON.stringify({ success: true, booking_group_id: result.booking_group_id, receipt_id: result.receipt_id }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

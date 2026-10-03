@@ -4,31 +4,53 @@ import { type Slot, type Booking } from '../types';
 
 interface SlotCardProps {
   slot: Slot;
-  booking?: Booking;
+  bookingInfo?: {
+    booking: Booking;
+    isPrimary: boolean;
+    primaryBooking: Booking;
+    duration: number;
+  } | null;
   onBook: (slot: Slot) => void;
   onViewBooking?: (booking: Booking, slot: Slot) => void;
 }
 
-export const SlotCard: React.FC<SlotCardProps> = ({ slot, booking, onBook, onViewBooking }) => {
+export const SlotCard: React.FC<SlotCardProps> = ({ slot, bookingInfo, onBook, onViewBooking }) => {
   
   const toBn = (num: number | string) => 
     num.toString().replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[parseInt(d)]);
 
-  // Determine State
   let state: 'খালি' | 'বুকড' = 'খালি';
   
-  if (booking) {
+  if (bookingInfo) {
     state = 'বুকড';
   }
 
-  if (state === 'বুকড' && booking) {
+  if (state === 'বুকড' && bookingInfo) {
+    const { booking, isPrimary, primaryBooking, duration } = bookingInfo;
+    
     // If we have actual check in/out times, it's "চলমান" (In-play) or "সম্পন্ন" (Completed)
     const isInPlay = booking.actual_check_in && !booking.actual_check_out;
     const bgClass = isInPlay ? 'bg-[#1F2937] text-white border-none' : 'bg-emerald-600 text-white border-none';
 
+    if (!isPrimary) {
+      return (
+        <button 
+          onClick={() => onViewBooking && onViewBooking(primaryBooking, slot)}
+          className={`w-full text-left rounded-2xl p-3 shadow-sm relative overflow-hidden active:scale-[0.98] transition-transform bg-gray-100 border border-gray-200`}
+        >
+          <div className="flex justify-between items-center opacity-70">
+            <span className="font-bold text-sm text-gray-600 flex items-center gap-1.5">
+              <Clock size={14} /> {slot.timeLabel}
+            </span>
+            <span className="text-xs font-semibold text-gray-500">বুকিংয়ের অংশ ↑</span>
+          </div>
+        </button>
+      );
+    }
+
     return (
       <button 
-        onClick={() => onViewBooking && onViewBooking(booking, slot)}
+        onClick={() => onViewBooking && onViewBooking(primaryBooking, slot)}
         className={`w-full text-left rounded-2xl p-4 shadow-md relative overflow-hidden active:scale-[0.98] transition-transform ${bgClass}`}
       >
         <div className="absolute top-0 right-0 bg-white/20 px-3 py-1 rounded-bl-xl text-xs font-bold backdrop-blur-sm shadow-sm flex items-center gap-1.5">
@@ -38,22 +60,22 @@ export const SlotCard: React.FC<SlotCardProps> = ({ slot, booking, onBook, onVie
         
         <div className="flex justify-between items-start mb-3">
           <span className="font-bold text-sm tracking-wide bg-black/15 border border-white/20 px-2.5 py-1 rounded-lg flex items-center gap-1.5">
-            <Clock size={14} /> {slot.timeLabel}
+            <Clock size={14} /> {slot.timeLabel} {duration > 1 && <span className="ml-1 text-xs bg-white/20 px-1.5 py-0.5 rounded">({toBn(duration)} ঘণ্টা)</span>}
           </span>
         </div>
         
         <div className="space-y-1">
           <p className="font-semibold text-lg flex items-center gap-2">
-            <User size={18} /> {booking.customers?.name || 'গ্রাহক'}
+            <User size={18} /> {primaryBooking.customers?.name || 'গ্রাহক'}
           </p>
-          <p className="text-white/80 text-sm font-medium">{booking.customer_phone}</p>
+          <p className="text-white/80 text-sm font-medium">{primaryBooking.customer_phone}</p>
         </div>
         
         <div className="mt-4 pt-3 border-t border-white/20 flex justify-between items-center text-sm font-medium">
-          <span>অগ্রিম: ৳{toBn(booking.advance_paid)}</span>
-          {booking.due_amount > 0 ? (
+          <span>অগ্রিম: ৳{toBn(primaryBooking.advance_paid)}</span>
+          {primaryBooking.due_amount > 0 ? (
             <span className="bg-red-500 text-white px-2.5 py-1 rounded-lg font-bold shadow-sm">
-              বকেয়া: ৳{toBn(booking.due_amount)}
+              বকেয়া: ৳{toBn(primaryBooking.due_amount)}
             </span>
           ) : (
             <span className="text-green-200 font-bold flex items-center gap-1">
@@ -63,10 +85,10 @@ export const SlotCard: React.FC<SlotCardProps> = ({ slot, booking, onBook, onVie
         </div>
 
         {/* Premium Watermark Stamp */}
-        {booking.booked_by_role && (
+        {primaryBooking.booked_by_role && (
           <div className="absolute top-10 -right-4 -rotate-12 pointer-events-none opacity-[0.15] z-0">
             <span className="border-4 border-white px-3 py-1 rounded-xl text-2xl font-black uppercase tracking-wider text-white">
-              {booking.booked_by_role === 'admin' ? 'মালিক দ্বারা' : 'ম্যানেজার'}
+              {primaryBooking.booked_by_role === 'admin' ? 'মালিক দ্বারা' : 'ম্যানেজার'}
             </span>
           </div>
         )}

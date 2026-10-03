@@ -12,7 +12,7 @@ interface BookingModalProps {
 }
 
 export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selectedDate, onClose, onSuccess }) => {
-  const { settings, user } = useAuth();
+  const { settings } = useAuth();
   
   const [phone, setPhone] = useState('');
   const [name, setName] = useState('');

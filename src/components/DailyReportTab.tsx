@@ -67,7 +67,7 @@ export const DailyReportTab: React.FC = () => {
     
     let rev = 0; let cash = 0; let bk = 0; let ng = 0;
     let sdRev = 0; let fRev = 0; let pRev = 0; let oRev = 0;
-    pData?.forEach(p => {
+    pData?.forEach((p: any) => {
       rev += p.amount;
       if (p.method === 'Cash') cash += p.amount;
       else if (p.method === 'bKash') bk += p.amount;
@@ -81,7 +81,7 @@ export const DailyReportTab: React.FC = () => {
     });
 
     let exp = 0;
-    eData?.forEach(e => exp += e.amount);
+    eData?.forEach((e: any) => exp += e.amount);
 
     setRevenue(rev);
     setSameDayRev(sdRev);
@@ -148,7 +148,7 @@ export const DailyReportTab: React.FC = () => {
       const headers = ['ID', 'Booking Date', 'Start Time', 'Phone', 'Total Price', 'Discount', 'Advance Paid', 'Due', 'Status'];
       const csvRows = [headers.join(',')];
       
-      bData.forEach(b => {
+      bData.forEach((b: any) => {
         csvRows.push(`${b.id},${b.date},${b.start_time},${b.customer_phone},${b.total_price},${b.discount || 0},${b.advance_paid},${b.due_amount},${b.status}`);
       });
       

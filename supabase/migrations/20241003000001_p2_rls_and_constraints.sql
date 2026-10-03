@@ -57,27 +57,5 @@ ALTER TABLE bookings ADD CONSTRAINT bookings_discount_check CHECK (discount >= 0
 
 ALTER TABLE payments DROP CONSTRAINT IF EXISTS payments_amount_check;
 ALTER TABLE payments ADD CONSTRAINT payments_amount_check CHECK (amount >= 0);
-
 ALTER TABLE expenses DROP CONSTRAINT IF EXISTS expenses_amount_check;
 ALTER TABLE expenses ADD CONSTRAINT expenses_amount_check CHECK (amount >= 0);
-
--- RPC for atomic receipt counter
-CREATE OR REPLACE FUNCTION increment_receipt_counter(p_date date)
-RETURNS int
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-  v_next int;
-BEGIN
-  INSERT INTO receipt_counters (business_date, last_n)
-  VALUES (p_date, 1)
-  ON CONFLICT (business_date) DO UPDATE SET 
-    last_n = receipt_counters.last_n + 1
-  RETURNING last_n INTO v_next;
-  RETURN v_next;
-END;
-$$;
-REVOKE ALL ON FUNCTION increment_receipt_counter(date) FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION increment_receipt_counter(date) TO service_role;

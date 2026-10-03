@@ -36,7 +36,7 @@ export const PnLCard: React.FC = () => {
       let bkTotal = 0;
       let ngTotal = 0;
       
-      payments?.forEach(p => {
+      payments?.forEach((p: any) => {
         rev += p.amount;
         if (p.method === 'Cash') cTotal += p.amount;
         else if (p.method === 'bKash') bkTotal += p.amount;
@@ -44,10 +44,10 @@ export const PnLCard: React.FC = () => {
       });
 
       let exp = 0;
-      exps?.forEach(e => exp += e.amount);
+      exps?.forEach((e: any) => exp += e.amount);
       
       let disc = 0;
-      bookings?.forEach(b => disc += (b.discount || 0));
+      bookings?.forEach((b: any) => disc += (b.discount || 0));
 
       setRevenue(rev);
       setExpenses(exp);
