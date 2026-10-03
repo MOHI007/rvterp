@@ -21,8 +21,10 @@ export const CustomerListTab: React.FC = () => {
 
   const fetchCRM = async () => {
     setLoading(true);
-    const { data } = await supabase.from('customers').select('*').order('total_matches', { ascending: false });
-    if (data) setCustomers(data);
+    const { data } = await supabase.functions.invoke('get-customers', {
+      headers: { 'x-session-token': localStorage.getItem('session_token') || '' }
+    });
+    if (data?.success) setCustomers(data.customers);
     setLoading(false);
   };
 
@@ -35,12 +37,16 @@ export const CustomerListTab: React.FC = () => {
     if (!editingCustomer) return;
     setIsSaving(true);
     try {
-      const { error } = await supabase.from('customers').update({
-        name: editName,
-        advance_balance: parseInt(editCredit) || 0
-      }).eq('phone_number', editingCustomer.phone_number);
+      const { data, error } = await supabase.functions.invoke('update-customer', {
+        headers: { 'x-session-token': localStorage.getItem('session_token') || '' },
+        body: {
+          phone_number: editingCustomer.phone_number,
+          name: editName,
+          advance_balance: parseInt(editCredit) || 0
+        }
+      });
       
-      if (error) throw error;
+      if (error || !data?.success) throw new Error(data?.error || error?.message);
       await fetchCRM();
       setEditingCustomer(null);
     } catch (err) {

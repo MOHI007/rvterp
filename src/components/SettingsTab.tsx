@@ -55,11 +55,12 @@ export const SettingsTab: React.FC = () => {
         expense_categories: expenseCategories
       };
       
-      const { error } = await supabase
-        .from('settings')
-        .upsert({ id: settings?.id || 1, ...payload });
+      const { data, error } = await supabase.functions.invoke('update-settings', {
+        headers: { 'x-session-token': localStorage.getItem('session_token') || '' },
+        body: { id: settings?.id || 1, ...payload }
+      });
 
-      if (error) throw error;
+      if (error || !data?.success) throw new Error(data?.error || error?.message);
       await fetchSettings();
       alert('সেটিংস সফলভাবে সেভ হয়েছে!');
     } catch (err) {
