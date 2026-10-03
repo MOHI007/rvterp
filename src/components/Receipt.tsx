@@ -6,9 +6,10 @@ import { type Booking } from '../types';
 
 interface ReceiptProps {
   booking: Booking;
+  duration?: number;
 }
 
-export const Receipt: React.FC<ReceiptProps> = ({ booking }) => {
+export const Receipt: React.FC<ReceiptProps> = ({ booking, duration = 1 }) => {
   const { settings } = useAuth();
   const [dueCollected, setDueCollected] = useState(0);
 
@@ -42,6 +43,18 @@ export const Receipt: React.FC<ReceiptProps> = ({ booking }) => {
 
       <div className="space-y-0.5 text-xs mb-2 mt-3">
         <p><strong>তারিখ:</strong> {new Date(booking.date).toLocaleDateString('bn-BD')}</p>
+        <p><strong>সময়:</strong> {(() => {
+          const [startHStr, startMStr] = booking.start_time.split(':');
+          let startH = parseInt(startHStr);
+          const endH = (startH + duration) % 24;
+          
+          const formatH = (h: number) => {
+            const period = h >= 12 ? 'PM' : 'AM';
+            let hr = h % 12 || 12;
+            return `${toBn(hr)}:${toBn(startMStr)} ${period}`;
+          };
+          return `${formatH(startH)} - ${formatH(endH)}`;
+        })()}</p>
         <p><strong>বুকিং আইডি:</strong> #{booking.receipt_id || booking.id.slice(0, 6).toUpperCase()}</p>
         <p><strong>গ্রাহক:</strong> {booking.customers?.name || 'অজানা গ্রাহক'}</p>
         <p><strong>ফোন:</strong> {toBn(booking.customer_phone)}</p>

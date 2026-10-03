@@ -9,11 +9,12 @@ import { MessageButtons } from './MessageButtons';
 interface Props {
   booking: Booking;
   slot: Slot;
+  duration?: number;
   onClose: () => void;
   onRefresh: () => void;
 }
 
-export const ActiveBookingDetails: React.FC<Props> = ({ booking, slot, onClose, onRefresh }) => {
+export const ActiveBookingDetails: React.FC<Props> = ({ booking, slot, duration = 1, onClose, onRefresh }) => {
   const [showPayment, setShowPayment] = useState(false);
   const [isUpdatingTime, setIsUpdatingTime] = useState(false);
 
@@ -131,7 +132,22 @@ export const ActiveBookingDetails: React.FC<Props> = ({ booking, slot, onClose, 
               <div className="grid grid-cols-2 gap-3 mb-4">
                 <div className="bg-gray-50 border border-gray-200 p-3 rounded-2xl text-center">
                   <p className="text-xs text-gray-500 font-bold mb-1">নির্ধারিত সময়</p>
-                  <p className="text-sm font-bold text-gray-800">{slot.timeLabel}</p>
+                  <p className="text-sm font-bold text-gray-800">
+                    {(() => {
+                      if (duration <= 1) return slot.timeLabel;
+                      // Calculate the end time based on start_time + duration
+                      const [startHStr, startMStr] = slot.startTime.split(':');
+                      let startH = parseInt(startHStr);
+                      const endH = (startH + duration) % 24;
+                      
+                      const formatH = (h: number) => {
+                        const period = h >= 12 ? 'PM' : 'AM';
+                        let hr = h % 12 || 12;
+                        return `${toBn(hr)}:${toBn(startMStr)} ${period}`;
+                      };
+                      return `${formatH(startH)} - ${formatH(endH)}`;
+                    })()}
+                  </p>
                 </div>
                 <div className="bg-gray-50 border border-gray-200 p-3 rounded-2xl text-center">
                   <p className="text-xs text-gray-500 font-bold mb-1">তারিখ</p>
@@ -258,7 +274,7 @@ export const ActiveBookingDetails: React.FC<Props> = ({ booking, slot, onClose, 
       </div>
 
       {/* Hidden Thermal Receipt component */}
-      <Receipt booking={booking} />
+      <Receipt booking={booking} duration={duration} />
     </>
   );
 };

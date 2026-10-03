@@ -65,20 +65,53 @@ export const DailyReportTab: React.FC = () => {
     setBookings(bData || []);
     setExpenses(eData || []);
     
-    let rev = 0; let cash = 0; let bk = 0; let ng = 0;
-    let sdRev = 0; let fRev = 0; let pRev = 0; let oRev = 0;
+    let sdRev = 0; // Today's bookings income
+    let fRev = 0;  // Future advance collected today
+    let pRev = 0;  // Past dues collected today
+    let oRev = 0;  // Other income collected today
+    
+    let cash = 0; 
+    let bk = 0; 
+    let ng = 0;
+
+    // 1. Calculate Today's Booking Income from bookings directly
+    bData.forEach((b: any) => {
+      const netPaid = (b.total_price || 0) - (b.discount || 0) - (b.due_amount || 0);
+      if (netPaid > 0) {
+        sdRev += netPaid;
+        
+        // Since legacy bookings don't have payment method for advance in payments table,
+        // or if advance was paid on a previous day (missing from today's pData),
+        // we add the missing amount to Cash to balance the drawer.
+        const bPayments = pData?.filter((p: any) => p.booking_id === b.id) || [];
+        const paymentSumToday = bPayments.reduce((sum: number, p: any) => sum + p.amount, 0);
+        const missingAmount = netPaid - paymentSumToday;
+        
+        if (missingAmount > 0) {
+          cash += missingAmount;
+        }
+      }
+    });
+
+    // 2. Process payments table for Payment Methods and Future/Past/Other revenue
     pData?.forEach((p: any) => {
-      rev += p.amount;
+      // Add to payment method totals
       if (p.method === 'Cash') cash += p.amount;
       else if (p.method === 'bKash') bk += p.amount;
       else if (p.method === 'Nagad') ng += p.amount;
 
+      // Distribute to revenue buckets based on booking date
       const bDate = p.bookings?.date;
-      if (bDate === selectedDate) sdRev += p.amount;
-      else if (bDate && bDate > selectedDate) fRev += p.amount;
-      else if (bDate && bDate < selectedDate) pRev += p.amount;
-      else oRev += p.amount;
+      if (bDate) {
+        if (bDate > selectedDate) fRev += p.amount;
+        else if (bDate < selectedDate) pRev += p.amount;
+        // if bDate === selectedDate, it's already included in sdRev via bookings loop above
+      } else {
+        oRev += p.amount;
+      }
     });
+
+    const rev = sdRev + fRev + pRev + oRev;
 
     let exp = 0;
     eData?.forEach((e: any) => exp += e.amount);
@@ -235,22 +268,56 @@ export const DailyReportTab: React.FC = () => {
           <p className="text-sm text-gray-400 text-center py-2">কোনো বুকিং নেই</p>
         ) : (
           <div className="space-y-3 print:space-y-1">
-            {bookings.map(b => (
-              <div key={b.id} className="flex justify-between items-center border-b border-gray-50 pb-2 last:border-0 last:pb-0 print:border-dashed print:border-gray-400">
-                <div>
-                  <p className="text-xs font-bold text-gray-500 print:text-[10px]">{formatTime(b.start_time)} - {formatTime(b.end_time)}</p>
-                  <p className="text-sm font-bold text-gray-800 print:text-[11px]">{b.customers?.name || b.customer_phone}</p>
+            {(() => {
+              // Group multi-hour bookings
+              const groupMap = new Map();
+              const getSlotValue = (timeStr: string) => {
+                const h = parseInt(timeStr.split(':')[0]);
+                return h < 6 ? h + 24 : h;
+              };
+
+              bookings.forEach(b => {
+                const groupId = b.booking_group_id || b.id;
+                if (!groupMap.has(groupId)) {
+                  groupMap.set(groupId, [b]);
+                } else {
+                  groupMap.get(groupId).push(b);
+                }
+              });
+
+              const groupedBookings = Array.from(groupMap.values()).map(group => {
+                // Sort chronologically relative to 6 AM business day start
+                group.sort((a: any, b: any) => getSlotValue(a.start_time) - getSlotValue(b.start_time));
+                
+                const firstSlot = group[0];
+                const lastSlot = group[group.length - 1];
+                
+                return {
+                  ...firstSlot,
+                  end_time: lastSlot.end_time,
+                  total_price: group.reduce((sum: number, b: any) => sum + Number(b.total_price || 0), 0),
+                  discount: group.reduce((sum: number, b: any) => sum + Number(b.discount || 0), 0),
+                  due_amount: group.reduce((sum: number, b: any) => sum + Number(b.due_amount || 0), 0)
+                };
+              });
+
+              return groupedBookings.map(b => (
+                <div key={b.id} className="flex justify-between items-center border-b border-gray-50 pb-2 last:border-0 last:pb-0 print:border-dashed print:border-gray-400">
+                  <div>
+                    <p className="text-xs font-bold text-gray-500 print:text-[10px]">{formatTime(b.start_time)} - {formatTime(b.end_time)}</p>
+                    <p className="text-sm font-bold text-gray-800 print:text-[11px]">{b.customers?.name || b.customer_phone}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-bold text-gray-800 print:text-[11px]">৳{toBn(b.total_price - (b.discount || 0))} <span className="text-[10px] text-gray-400 font-normal">নেট</span></p>
+                    {b.due_amount > 0 ? (
+                      <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-bold print:border print:border-black print:bg-transparent print:text-black">বকেয়া: ৳{toBn(b.due_amount)}</span>
+                    ) : (
+                      <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-bold print:hidden">পেইড</span>
+                    )}
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm font-bold text-gray-800 print:text-[11px]">৳{toBn(b.total_price - (b.discount || 0))} <span className="text-[10px] text-gray-400 font-normal">নেট</span></p>
-                  {b.due_amount > 0 ? (
-                    <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-bold print:border print:border-black print:bg-transparent print:text-black">বকেয়া: ৳{toBn(b.due_amount)}</span>
-                  ) : (
-                    <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-bold print:hidden">পেইড</span>
-                  )}
-                </div>
-              </div>
-            ))}
+              ));
+            })()}
           </div>
         )}
       </div>

@@ -17,7 +17,7 @@ export const Dashboard: React.FC = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   
   const [activeSlot, setActiveSlot] = useState<Slot | null>(null);
-  const [activeBooked, setActiveBooked] = useState<{ booking: Booking, slot: Slot } | null>(null);
+  const [activeBooked, setActiveBooked] = useState<{ booking: Booking, slot: Slot, duration: number } | null>(null);
   const [showExpense, setShowExpense] = useState(false);
   
   // Force re-render every minute to keep past slots hiding dynamically
@@ -190,7 +190,7 @@ export const Dashboard: React.FC = () => {
                 slot={slot} 
                 bookingInfo={info}
                 onBook={(s) => setActiveSlot(s)}
-                onViewBooking={(booking, s) => setActiveBooked({ booking, slot: s })}
+                onViewBooking={(booking, s) => setActiveBooked({ booking, slot: s, duration: info?.duration || 1 })}
               />
             );
           })}
@@ -214,6 +214,7 @@ export const Dashboard: React.FC = () => {
         <ActiveBookingDetails 
           booking={activeBooked.booking}
           slot={activeBooked.slot}
+          duration={activeBooked.duration}
           onClose={() => setActiveBooked(null)}
           onRefresh={fetchBookings}
         />
