@@ -23,7 +23,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selecte
   const [totalMatches, setTotalMatches] = useState(0);
   const [isExistingCustomer, setIsExistingCustomer] = useState(false);
   
-  const [hours, setHours] = useState(existingGroupBookings?.length || 1);
+  const [hours] = useState(existingGroupBookings?.length || 1);
   const [discount, setDiscount] = useState(primaryBooking?.discount?.toString() || '');
   const [advance, setAdvance] = useState(primaryBooking?.advance_paid?.toString() || '');
   const [advanceMethod, setAdvanceMethod] = useState<'Cash' | 'bKash' | 'Nagad'>('Cash');
@@ -226,18 +226,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selecte
           <hr className="border-gray-100" />
 
           {/* Pricing Config */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-500 mb-1">কত ঘণ্টা?</label>
-              <select 
-                value={hours} onChange={(e) => setHours(Number(e.target.value))}
-                className="w-full px-3 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none font-semibold"
-              >
-                {[1, 2, 3].map(h => (
-                  <option key={h} value={h}>{toBn(h)} ঘণ্টা</option>
-                ))}
-              </select>
-            </div>
+          <div className="grid grid-cols-1 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-500 mb-1">ছাড় (৳)</label>
               <input 
