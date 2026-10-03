@@ -46,10 +46,10 @@ export const DailyReportTab: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     
-    const startDate = new Date(`${selectedDate}T06:00:00`);
-    const endDate = new Date(startDate);
+    const startDate = new Date(`${selectedDate}T06:00:00+06:00`);
+    const endDate = new Date(startDate.getTime());
     endDate.setDate(endDate.getDate() + 1);
-    endDate.setHours(5, 59, 59, 999);
+    endDate.setMilliseconds(endDate.getMilliseconds() - 1);
     
     // Handle invalid date fallback
     if (isNaN(startDate.getTime())) {
@@ -57,29 +57,30 @@ export const DailyReportTab: React.FC = () => {
       return;
     }
 
-    const [dayRes, reportRes] = await Promise.all([
-      supabase.functions.invoke('get-day', {
-        headers: { 'x-session-token': localStorage.getItem('session_token') || '' },
-        body: { date: selectedDate }
-      }),
-      supabase.functions.invoke('get-daily-report', {
-        headers: { 'x-session-token': localStorage.getItem('session_token') || '' },
-        body: { date: selectedDate }
-      })
+    const startIso = startDate.toISOString();
+    const endIso = endDate.toISOString();
+
+    // 1. DIRECT SUPABASE QUERIES (per user instruction)
+    const [
+      { data: directBookings },
+      { data: directPayments },
+      { data: directExpenses },
+      { data: directIncomes }
+    ] = await Promise.all([
+      supabase.from('bookings').select('*, customers(name)').eq('date', selectedDate).neq('status', 'cancelled').order('start_time', { ascending: true }),
+      supabase.from('payments').select('*, bookings(date, status)').gte('created_at', startIso).lte('created_at', endIso),
+      supabase.from('expenses').select('*').gte('created_at', startIso).lte('created_at', endIso).order('created_at', { ascending: true }),
+      supabase.from('other_income').select('*').eq('business_date', selectedDate).order('created_at', { ascending: true })
     ]);
 
-    if (reportRes.error || !reportRes.data?.success) {
-      console.error(reportRes.error || reportRes.data?.error);
-      setLoading(false);
-      return;
-    }
-
-    const { payments: pData, expenses: eData, incomes: iData } = reportRes.data;
-    const bData = dayRes.data?.bookings || reportRes.data.bookings || [];
+    const bData = directBookings || [];
+    const pData = directPayments || [];
+    const eData = directExpenses || [];
+    const iData = directIncomes || [];
     
-    setBookings(bData || []);
-    setExpenses(eData || []);
-    setIncomes(iData || []);
+    setBookings(bData);
+    setExpenses(eData);
+    setIncomes(iData);
     
     let sdRev = 0; // Today's bookings income
     let fRev = 0;  // Future advance collected today
@@ -92,24 +93,37 @@ export const DailyReportTab: React.FC = () => {
     let ng = 0;
 
     // 1. Process payments table for Payment Methods and Booking Revenue
-    pData?.forEach((p: any) => {
-      // Add to payment method totals
-      if (p.method === 'Cash') cash += p.amount;
-      else if (p.method === 'bKash') bk += p.amount;
-      else if (p.method === 'Nagad') ng += p.amount;
+    if (pData.length > 0) {
+      pData.forEach((p: any) => {
+        if (p.method === 'Cash') cash += p.amount;
+        else if (p.method === 'bKash') bk += p.amount;
+        else if (p.method === 'Nagad') ng += p.amount;
 
-      // Distribute to revenue buckets
-      if (p.bookings?.status === 'cancelled') {
-        cRev += p.amount;
-      } else {
-        const bDate = p.bookings?.date;
-        if (bDate) {
-          if (bDate > selectedDate) fRev += p.amount;
-          else if (bDate < selectedDate) pRev += p.amount;
-          else sdRev += p.amount;
+        if (p.bookings?.status === 'cancelled') {
+          cRev += p.amount;
+        } else {
+          const bDate = p.bookings?.date;
+          if (bDate) {
+            if (bDate > selectedDate) fRev += p.amount;
+            else if (bDate < selectedDate) pRev += p.amount;
+            else sdRev += p.amount;
+          }
         }
-      }
-    });
+      });
+    } else {
+      // Fallback: calculate income purely from the day's bookings direct array
+      // This assumes all advance_paid was collected in Cash if no payment data is available
+      const processedGroups = new Set();
+      bData.forEach((b: any) => {
+        const groupId = b.booking_group_id || b.id;
+        if (!processedGroups.has(groupId)) {
+          const amt = Number(b.advance_paid) || 0;
+          sdRev += amt;
+          cash += amt; // Default to cash for fallback
+          processedGroups.add(groupId);
+        }
+      });
+    }
 
     // 3. Process other_income
     iData?.forEach((i: any) => {
