@@ -38,12 +38,12 @@ export const ActiveBookingDetails: React.FC<Props> = ({ booking, slot, onClose, 
         payload.note = checkoutNote;
       }
 
-      const { error } = await supabase
-        .from('bookings')
-        .update(payload)
-        .eq('id', booking.id);
+      const { data, error } = await supabase.functions.invoke('update-booking-time', {
+        headers: { 'x-session-token': localStorage.getItem('session_token') || '' },
+        body: { booking_id: booking.id, ...payload }
+      });
 
-      if (error) throw error;
+      if (error || !data?.success) throw new Error(data?.error || error?.message);
       onRefresh();
     } catch (err) {
       console.error('Time update failed:', err);
@@ -67,27 +67,12 @@ export const ActiveBookingDetails: React.FC<Props> = ({ booking, slot, onClose, 
     
     setIsUpdatingTime(true);
     try {
-      const { error: bookingError } = await supabase
-        .from('bookings')
-        .update({ status: 'cancelled' })
-        .eq('id', booking.id);
+      const { data, error } = await supabase.functions.invoke('cancel-booking', {
+        headers: { 'x-session-token': localStorage.getItem('session_token') || '' },
+        body: { booking_id: booking.id }
+      });
 
-      if (bookingError) throw bookingError;
-
-      if (booking.advance_paid > 0) {
-        const { data: customer } = await supabase
-          .from('customers')
-          .select('advance_balance')
-          .eq('phone_number', booking.customer_phone)
-          .single();
-          
-        const currentBalance = customer?.advance_balance || 0;
-        
-        await supabase
-          .from('customers')
-          .update({ advance_balance: currentBalance + booking.advance_paid })
-          .eq('phone_number', booking.customer_phone);
-      }
+      if (error || !data?.success) throw new Error(data?.error || error?.message);
 
       alert("বুকিং বাতিল এবং ক্রেডিট সেভ সফল হয়েছে!");
       onRefresh();
