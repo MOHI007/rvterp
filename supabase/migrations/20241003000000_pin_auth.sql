@@ -5,10 +5,13 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 ALTER TABLE profiles 
 ADD COLUMN IF NOT EXISTS pin_hash text;
 
--- backfill pin_hash
-UPDATE profiles 
-SET pin_hash = crypt(pin, gen_salt('bf'))
-WHERE pin IS NOT NULL;
+-- backfill pin_hash safely
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='profiles' AND column_name='pin') THEN
+    EXECUTE 'UPDATE profiles SET pin_hash = crypt(pin, gen_salt(''bf'')) WHERE pin IS NOT NULL';
+  END IF;
+END $$;
 
 -- drop pin column
 ALTER TABLE profiles 

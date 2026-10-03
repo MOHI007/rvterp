@@ -42,7 +42,7 @@ serve(async (req) => {
     // Validate token
     const { data, error } = await supabaseClient
       .from('app_sessions')
-      .select('profile_id, role, expires_at, profiles(name)')
+      .select('profile_id, expires_at, profiles(name, role)')
       .eq('token', token)
       .limit(1)
       .maybeSingle();
@@ -68,7 +68,7 @@ serve(async (req) => {
       success: true,
       id: data.profile_id,
       name: profiles?.name,
-      role: data.role
+      role: profiles?.role
     }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

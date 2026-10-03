@@ -15,6 +15,9 @@ export const DailyReportTab: React.FC = () => {
   const [expenses, setExpenses] = useState<any[]>([]);
   
   const [revenue, setRevenue] = useState(0);
+  const [sameDayRev, setSameDayRev] = useState(0);
+  const [futureRev, setFutureRev] = useState(0);
+  const [pastRev, setPastRev] = useState(0);
   const [expenseTotal, setExpenseTotal] = useState(0);
   const [cashTotal, setCashTotal] = useState(0);
   const [bkashTotal, setBkashTotal] = useState(0);
@@ -57,7 +60,7 @@ export const DailyReportTab: React.FC = () => {
       
     const { data: pData } = await supabase
       .from('payments')
-      .select('*')
+      .select('*, bookings(date)')
       .gte('created_at', startIso)
       .lte('created_at', endIso);
       
@@ -72,17 +75,26 @@ export const DailyReportTab: React.FC = () => {
     setExpenses(eData || []);
     
     let rev = 0; let cash = 0; let bk = 0; let ng = 0;
+    let sdRev = 0; let fRev = 0; let pRev = 0;
     pData?.forEach(p => {
       rev += p.amount;
       if (p.method === 'Cash') cash += p.amount;
       else if (p.method === 'bKash') bk += p.amount;
       else if (p.method === 'Nagad') ng += p.amount;
+
+      const bDate = p.bookings?.date;
+      if (bDate === selectedDate) sdRev += p.amount;
+      else if (bDate && bDate > selectedDate) fRev += p.amount;
+      else if (bDate && bDate < selectedDate) pRev += p.amount;
     });
 
     let exp = 0;
     eData?.forEach(e => exp += e.amount);
 
     setRevenue(rev);
+    setSameDayRev(sdRev);
+    setFutureRev(fRev);
+    setPastRev(pRev);
     setExpenseTotal(exp);
     setCashTotal(cash);
     setBkashTotal(bk);
@@ -107,6 +119,9 @@ export const DailyReportTab: React.FC = () => {
     const localDateStr = new Date(parseInt(y), parseInt(m) - 1, parseInt(day)).toLocaleDateString('bn-BD');
     const text = `📊 *ডেইলি রিপোর্ট* (${localDateStr})\n\n` +
                  `আজকের আয়: ৳${toBn(revenue)}\n` +
+                 `  - আজকের বুকিং থেকে: ৳${toBn(sameDayRev)}\n` +
+                 `  - ভবিষ্যৎ বুকিংয়ের অগ্রিম: ৳${toBn(futureRev)}\n` +
+                 `  - পুরাতন বকেয়া আদায়: ৳${toBn(pastRev)}\n\n` +
                  `আজকের খরচ: ৳${toBn(expenseTotal)}\n` +
                  `---------------------------\n` +
                  `মোট ক্যাশ কালেকশন: ৳${toBn(cashTotal)}\n` +
@@ -128,15 +143,17 @@ export const DailyReportTab: React.FC = () => {
       const { data: bData } = await supabase
         .from('bookings')
         .select('*')
-        .gte('date', getBusinessDateStr(thirtyDaysAgo));
+        .gte('date', getBusinessDateStr(thirtyDaysAgo))
+        .neq('status', 'cancelled')
+        .order('date', { ascending: true });
 
       if (!bData) return;
       
-      const headers = ['ID', 'Date', 'Start Time', 'Phone', 'Total Price', 'Advance', 'Due', 'Status'];
+      const headers = ['ID', 'Booking Date', 'Start Time', 'Phone', 'Total Price', 'Discount', 'Advance Paid', 'Due', 'Status'];
       const csvRows = [headers.join(',')];
       
       bData.forEach(b => {
-        csvRows.push(`${b.id},${b.date},${b.start_time},${b.customer_phone},${b.total_price},${b.advance_paid},${b.due_amount},${b.status}`);
+        csvRows.push(`${b.id},${b.date},${b.start_time},${b.customer_phone},${b.total_price},${b.discount || 0},${b.advance_paid},${b.due_amount},${b.status}`);
       });
       
       const csvString = csvRows.join('\n');
@@ -145,7 +162,7 @@ export const DailyReportTab: React.FC = () => {
       
       const a = document.createElement('a');
       a.href = url;
-      a.download = `monthly_report_${getBusinessDateStr()}.csv`;
+      a.download = `monthly_bookings_by_booking_date_${getBusinessDateStr()}.csv`;
       a.click();
     } catch (e) {
       alert("ডাউনলোড ফেইল হয়েছে।");
@@ -168,9 +185,16 @@ export const DailyReportTab: React.FC = () => {
 
       {/* Summary Cards (Grid in UI, stacked in Print) */}
       <div className="grid grid-cols-2 print:grid-cols-1 gap-3 print:gap-1">
-        <div className="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 print:border-none print:shadow-none print:p-0 print:flex print:justify-between print:bg-transparent">
-          <p className="text-gray-500 text-xs font-bold mb-1 flex items-center gap-1 print:text-black"><ArrowUp size={14} className="text-green-500 print:hidden"/> মোট আয়</p>
-          <p className="text-xl font-bold text-green-600 print:text-black print:text-sm">৳{toBn(revenue)}</p>
+        <div className="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 print:border-none print:shadow-none print:p-0 print:bg-transparent">
+          <div className="flex justify-between print:flex-row flex-col">
+            <p className="text-gray-500 text-xs font-bold mb-1 flex items-center gap-1 print:text-black"><ArrowUp size={14} className="text-green-500 print:hidden"/> মোট আয়</p>
+            <p className="text-xl font-bold text-green-600 print:text-black print:text-sm">৳{toBn(revenue)}</p>
+          </div>
+          <div className="mt-2 space-y-0.5 text-[10px] text-gray-500 print:text-black border-t border-gray-50 pt-1 print:border-dashed print:border-black">
+            <div className="flex justify-between"><span>আজকের বুকিং:</span><span>৳{toBn(sameDayRev)}</span></div>
+            <div className="flex justify-between"><span>ভবিষ্যৎ অগ্রিম:</span><span>৳{toBn(futureRev)}</span></div>
+            <div className="flex justify-between"><span>পুরাতন বকেয়া:</span><span>৳{toBn(pastRev)}</span></div>
+          </div>
         </div>
         <div className="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 print:border-none print:shadow-none print:p-0 print:flex print:justify-between print:bg-transparent">
           <p className="text-gray-500 text-xs font-bold mb-1 flex items-center gap-1 print:text-black"><ArrowDown size={14} className="text-red-500 print:hidden"/> মোট খরচ</p>
@@ -221,7 +245,7 @@ export const DailyReportTab: React.FC = () => {
                   <p className="text-sm font-bold text-gray-800 print:text-[11px]">{b.customers?.name || b.customer_phone}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-bold text-gray-800 print:text-[11px]">৳{toBn(b.total_price)}</p>
+                  <p className="text-sm font-bold text-gray-800 print:text-[11px]">৳{toBn(b.total_price - (b.discount || 0))} <span className="text-[10px] text-gray-400 font-normal">নেট</span></p>
                   {b.due_amount > 0 ? (
                     <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-bold print:border print:border-black print:bg-transparent print:text-black">বকেয়া: ৳{toBn(b.due_amount)}</span>
                   ) : (
@@ -313,7 +337,7 @@ export const DailyReportTab: React.FC = () => {
           disabled={isGeneratingCSV}
           className="w-full py-4 bg-gray-200 text-gray-800 rounded-2xl font-bold text-lg active:scale-95 transition-transform flex justify-center items-center gap-2 shadow-sm"
         >
-          <Download size={20} /> {isGeneratingCSV ? 'ডাউনলোড হচ্ছে...' : 'মান্থলি রিপোর্ট ডাউনলোড (CSV)'}
+          <Download size={20} /> {isGeneratingCSV ? 'ডাউনলোড হচ্ছে...' : 'মান্থলি বুকিং রিপোর্ট (বুকিং ডেট অনুযায়ী)'}
         </button>
       </div>
 
