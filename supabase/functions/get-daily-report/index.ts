@@ -26,7 +26,7 @@ serve(async (req) => {
     );
 
     // F-A Window Fix: Server runs in UTC. Explicitly append +06:00 offset to
-    // build the window correctly for Dhaka time, otherwise 06:00-12:00 local payments are dropped.
+    // build the window correctly for Dhaka time (used for expenses only).
     const startDate = new Date(`${date}T06:00:00+06:00`);
     const endDate = new Date(startDate.getTime());
     endDate.setDate(endDate.getDate() + 1);
@@ -39,6 +39,8 @@ serve(async (req) => {
     const startIso = startDate.toISOString();
     const endIso = endDate.toISOString();
 
+    // IMPORTANT: Payments are fetched by BOOKING DATE (bookings.date = p_date), NOT by
+    // payment created_at. This ensures past bookings entered today don't pollute today's report.
     const [
       { data: bookings, error: bError },
       { data: payments, error: pError },
@@ -51,11 +53,12 @@ serve(async (req) => {
         .eq('date', date)
         .neq('status', 'cancelled')
         .order('start_time', { ascending: true }),
+      // Join payments via bookings.date so the report date drives which payments appear,
+      // not when the payment was physically recorded.
       supabaseClient
         .from('payments')
-        .select('*, bookings(date, status)')
-        .gte('created_at', startIso)
-        .lte('created_at', endIso),
+        .select('*, bookings!inner(date, status)')
+        .eq('bookings.date', date),
       supabaseClient
         .from('expenses')
         .select('*')

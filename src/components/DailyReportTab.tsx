@@ -111,7 +111,8 @@ export const DailyReportTab: React.FC = () => {
     let bk = 0; 
     let ng = 0;
 
-    // 1. Process payments table for Payment Methods and Booking Revenue
+    // 1. Process payments — all are now strictly scoped to bookings on selectedDate
+    //    (edge function fetches payments via bookings.date join, not created_at window)
     if (pData.length > 0) {
       pData.forEach((p: any) => {
         if (p.method === 'Cash') cash += p.amount;
@@ -121,24 +122,18 @@ export const DailyReportTab: React.FC = () => {
         if (p.bookings?.status === 'cancelled') {
           cRev += p.amount;
         } else {
-          const bDate = p.bookings?.date;
-          if (bDate) {
-            if (bDate > selectedDate) fRev += p.amount;
-            else if (bDate < selectedDate) pRev += p.amount;
-            else sdRev += p.amount;
-          }
+          sdRev += p.amount;
         }
       });
     } else {
-      // Fallback: calculate income purely from the day's bookings direct array
-      // This assumes all advance_paid was collected in Cash if no payment data is available
+      // Fallback: sum advance_paid directly from the day's bookings
       const processedGroups = new Set();
       bData.forEach((b: any) => {
         const groupId = b.booking_group_id || b.id;
         if (!processedGroups.has(groupId)) {
           const amt = Number(b.advance_paid) || 0;
           sdRev += amt;
-          cash += amt; // Default to cash for fallback
+          cash += amt;
           processedGroups.add(groupId);
         }
       });
