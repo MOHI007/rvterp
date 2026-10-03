@@ -13,7 +13,10 @@ serve(async (req) => {
   }
 
   try {
-    const { role } = await requireAuth(req);
+    const { profile_id, role } = await requireAuth(req);
+    if (role !== 'admin') {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: corsHeaders });
+    }
     const { id: booking_group_id, date, start_time, hours, phone, name, discount: rawDiscount, advance: rawAdvance, advanceMethod, advanceTrxId } = await req.json();
 
     // Validation (R5)
@@ -110,7 +113,8 @@ serve(async (req) => {
       p_customer_name: finalName,
       p_advance_method: advanceMethod,
       p_advance_trx_id: advanceTrxId,
-      p_booked_by_role: role || 'manager'
+      p_booked_by_role: role || 'manager',
+      p_profile_id: profile_id
     });
 
     if (rpcError) {
