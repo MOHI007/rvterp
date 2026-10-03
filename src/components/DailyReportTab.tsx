@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import { Calendar, Printer, Copy, FileText, ArrowDown, ArrowUp, Wallet, Download, Trash2, Edit3 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { IncomeModal } from './IncomeModal';
+import { BookingModal } from './BookingModal';
 import { BkashIcon } from './icons/BkashIcon';
 import { NagadIcon } from './icons/NagadIcon';
 
@@ -17,6 +18,7 @@ export const DailyReportTab: React.FC = () => {
   const [bookings, setBookings] = useState<any[]>([]);
   const [expenses, setExpenses] = useState<any[]>([]);
   const [incomes, setIncomes] = useState<any[]>([]);
+  const [activeEditGroup, setActiveEditGroup] = useState<any[] | null>(null);
   const [incomeToEdit, setIncomeToEdit] = useState<any>(null);
   
   const [revenue, setRevenue] = useState(0);
@@ -316,14 +318,26 @@ export const DailyReportTab: React.FC = () => {
                   end_time: lastSlot.end_time,
                   total_price: group.reduce((sum: number, b: any) => sum + Number(b.total_price || 0), 0),
                   discount: group.reduce((sum: number, b: any) => sum + Number(b.discount || 0), 0),
-                  due_amount: group.reduce((sum: number, b: any) => sum + Number(b.due_amount || 0), 0)
+                  due_amount: group.reduce((sum: number, b: any) => sum + Number(b.due_amount || 0), 0),
+                  raw_group: group
                 };
               });
 
               return groupedBookings.map(b => (
                 <div key={b.id} className="flex justify-between items-center border-b border-gray-50 pb-2 last:border-0 last:pb-0 print:border-dashed print:border-gray-400">
                   <div>
-                    <p className="text-xs font-bold text-gray-500 print:text-[10px]">{formatTime(b.start_time)} - {formatTime(b.end_time)}</p>
+                    <p className="text-xs font-bold text-gray-500 print:text-[10px] flex items-center gap-2">
+                      {formatTime(b.start_time)} - {formatTime(b.end_time)}
+                      {user?.role === 'admin' && (
+                        <button 
+                          onClick={() => setActiveEditGroup(b.raw_group)}
+                          className="p-1 bg-gray-100 hover:bg-gray-200 rounded text-gray-500 print:hidden transition-colors"
+                          title="সম্পাদনা"
+                        >
+                          <Edit3 size={12} />
+                        </button>
+                      )}
+                    </p>
                     <p className="text-sm font-bold text-gray-800 print:text-[11px]">{b.customers?.name || b.customer_phone}</p>
                   </div>
                   <div className="text-right">
@@ -468,6 +482,20 @@ export const DailyReportTab: React.FC = () => {
           <Download size={20} /> {isGeneratingCSV ? 'ডাউনলোড হচ্ছে...' : 'মান্থলি বুকিং রিপোর্ট (বুকিং ডেট অনুযায়ী)'}
         </button>
       </div>
+
+
+      {activeEditGroup && (
+        <BookingModal 
+          initialSlot={{ id: activeEditGroup[0].start_time, startTime: activeEditGroup[0].start_time, endTime: activeEditGroup[0].end_time, timeLabel: formatTime(activeEditGroup[0].start_time), price: 0, isPrime: false }} 
+          existingGroupBookings={activeEditGroup}
+          selectedDate={selectedDate}
+          onClose={() => setActiveEditGroup(null)}
+          onSuccess={() => {
+            setActiveEditGroup(null);
+            fetchData();
+          }}
+        />
+      )}
 
     </div>
   );

@@ -9,20 +9,23 @@ interface BookingModalProps {
   selectedDate: string;
   onClose: () => void;
   onSuccess: () => void;
+  existingGroupBookings?: any[];
 }
 
-export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selectedDate, onClose, onSuccess }) => {
+export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selectedDate, onClose, onSuccess, existingGroupBookings }) => {
   const { settings } = useAuth();
   
-  const [phone, setPhone] = useState('');
-  const [name, setName] = useState('');
+  const primaryBooking = existingGroupBookings?.[0];
+  
+  const [phone, setPhone] = useState(primaryBooking?.customer_phone || '');
+  const [name, setName] = useState(primaryBooking?.customers?.name || '');
   const [customerInfo, setCustomerInfo] = useState<Customer | null>(null);
   const [totalMatches, setTotalMatches] = useState(0);
   const [isExistingCustomer, setIsExistingCustomer] = useState(false);
   
-  const [hours, setHours] = useState(1);
-  const [discount, setDiscount] = useState('');
-  const [advance, setAdvance] = useState('');
+  const [hours, setHours] = useState(existingGroupBookings?.length || 1);
+  const [discount, setDiscount] = useState(primaryBooking?.discount?.toString() || '');
+  const [advance, setAdvance] = useState(primaryBooking?.advance_paid?.toString() || '');
   const [advanceMethod, setAdvanceMethod] = useState<'Cash' | 'bKash' | 'Nagad'>('Cash');
   const [advanceTrxId, setAdvanceTrxId] = useState('');
   
@@ -121,26 +124,27 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selecte
     try {
       const finalName = name.trim() || 'অজানা গ্রাহক';
       
-      // Call create-booking Edge Function
-      const { data, error } = await supabase.functions.invoke('create-booking', {
-        headers: {
-          'x-session-token': localStorage.getItem('session_token') || ''
-        },
-        body: {
-          date: selectedDate,
-          start_time: initialSlot.startTime,
-          hours,
-          phone,
-          name: finalName,
-          discount: parsedDiscount,
-          advance: parsedAdvance,
-          advanceMethod,
-          advanceTrxId
-        }
+      const endpoint = existingGroupBookings ? 'admin-update-booking' : 'create-booking';
+      const payload = {
+        date: selectedDate,
+        start_time: initialSlot.startTime,
+        hours,
+        phone,
+        name: finalName,
+        discount: parsedDiscount,
+        advance: parsedAdvance,
+        advanceMethod,
+        advanceTrxId,
+        ...(existingGroupBookings && { id: primaryBooking.booking_group_id || primaryBooking.id })
+      };
+
+      const { data, error } = await supabase.functions.invoke(endpoint, {
+        headers: { 'x-session-token': localStorage.getItem('session_token') || '' },
+        body: payload
       });
 
       if (error || !data?.success) {
-        throw new Error(data?.error || error?.message || 'বুকিং তৈরি করা যায়নি');
+        throw new Error(data?.error || error?.message || 'বুকিং তৈরি/আপডেট করা যায়নি');
       }
 
       onSuccess();
@@ -159,7 +163,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selecte
         {/* Header */}
         <div className="bg-gradient-to-r from-brand-orange to-brand-amber p-4 text-white flex justify-between items-center">
           <h2 className="text-xl font-bold flex items-center gap-2">
-            <Clock size={20} /> নতুন বুকিং
+            <Clock size={20} /> {existingGroupBookings ? 'বুকিং সম্পাদনা' : 'নতুন বুকিং'}
           </h2>
           <button onClick={onClose} className="p-1 hover:bg-white/20 rounded-full transition-colors">
             <X size={24} />
@@ -314,7 +318,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selecte
             disabled={isSubmitting}
             className="w-full py-4 mt-2 text-white font-bold text-lg rounded-2xl bg-gradient-to-r from-brand-orange to-brand-amber active:scale-95 transition-transform shadow-lg shadow-orange-500/30 flex justify-center items-center gap-2 disabled:opacity-70"
           >
-            {isSubmitting ? 'প্রসেসিং...' : <><CheckCircle2 size={24} /> নিশ্চিত করুন</>}
+            {isSubmitting ? 'প্রসেসিং...' : <><CheckCircle2 size={24} /> {existingGroupBookings ? 'আপডেট করুন' : 'নিশ্চিত করুন'}</>}
           </button>
 
         </form>

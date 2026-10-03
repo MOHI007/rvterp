@@ -17,8 +17,8 @@ export const Dashboard: React.FC = () => {
   const slots = React.useMemo(() => generateDailySlots(settings || undefined), [settings]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   
-  const [activeSlot, setActiveSlot] = useState<Slot | null>(null);
-  const [activeBooked, setActiveBooked] = useState<{ booking: Booking, slot: Slot, duration: number } | null>(null);
+  const [activeSlot, setActiveSlot] = useState<{slot: Slot, existingGroup?: Booking[]} | null>(null);
+  const [activeBooked, setActiveBooked] = useState<{ booking: Booking, slot: Slot, duration: number, groupBookings: Booking[] } | null>(null);
   const [showExpense, setShowExpense] = useState(false);
   const [showIncome, setShowIncome] = useState(false);
   
@@ -110,7 +110,7 @@ export const Dashboard: React.FC = () => {
     const primaryBooking = groupBookings[0];
     const duration = groupBookings.length;
     
-    return { booking, isPrimary, primaryBooking, duration };
+    return { booking, isPrimary, primaryBooking, duration, groupBookings };
   };
 
   const unbookedPrimeSlots = visibleSlots.filter(
@@ -200,8 +200,9 @@ export const Dashboard: React.FC = () => {
                 key={slot.id} 
                 slot={slot} 
                 bookingInfo={info}
-                onBook={(s) => setActiveSlot(s)}
-                onViewBooking={(booking, s) => setActiveBooked({ booking, slot: s, duration: info?.duration || 1 })}
+                onBook={(s) => setActiveSlot({slot: s})}
+                onViewBooking={(booking, s) => setActiveBooked({ booking, slot: s, duration: info?.duration || 1, groupBookings: info?.groupBookings || [] })}
+                onEditBooking={(group) => setActiveSlot({slot, existingGroup: group})}
               />
             );
           })}
@@ -211,7 +212,8 @@ export const Dashboard: React.FC = () => {
       {/* Modals */}
       {activeSlot && (
         <BookingModal 
-          initialSlot={activeSlot} 
+          initialSlot={activeSlot.slot} 
+          existingGroupBookings={activeSlot.existingGroup}
           selectedDate={selectedDate}
           onClose={() => setActiveSlot(null)}
           onSuccess={() => {

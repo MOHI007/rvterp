@@ -1,6 +1,7 @@
 import React from 'react';
-import { Plus, User, Clock } from 'lucide-react';
+import { Plus, User, Clock, Edit3 } from 'lucide-react';
 import { type Slot, type Booking } from '../types';
+import { useAuth } from '../context/AuthContext';
 
 interface SlotCardProps {
   slot: Slot;
@@ -9,12 +10,15 @@ interface SlotCardProps {
     isPrimary: boolean;
     primaryBooking: Booking;
     duration: number;
+    groupBookings: Booking[];
   } | null;
   onBook: (slot: Slot) => void;
   onViewBooking?: (booking: Booking, slot: Slot) => void;
+  onEditBooking?: (groupBookings: Booking[]) => void;
 }
 
-export const SlotCard: React.FC<SlotCardProps> = ({ slot, bookingInfo, onBook, onViewBooking }) => {
+export const SlotCard: React.FC<SlotCardProps> = ({ slot, bookingInfo, onBook, onViewBooking, onEditBooking }) => {
+  const { user } = useAuth();
   
   const toBn = (num: number | string) => 
     num.toString().replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[parseInt(d)]);
@@ -26,7 +30,7 @@ export const SlotCard: React.FC<SlotCardProps> = ({ slot, bookingInfo, onBook, o
   }
 
   if (state === 'বুকড' && bookingInfo) {
-    const { booking, isPrimary, primaryBooking, duration } = bookingInfo;
+    const { booking, isPrimary, primaryBooking, duration, groupBookings } = bookingInfo;
     
     // If we have actual check in/out times, it's "চলমান" (In-play) or "সম্পন্ন" (Completed)
     const isInPlay = booking.actual_check_in && !booking.actual_check_out;
@@ -62,6 +66,15 @@ export const SlotCard: React.FC<SlotCardProps> = ({ slot, bookingInfo, onBook, o
           <span className="font-bold text-sm tracking-wide bg-black/15 border border-white/20 px-2.5 py-1 rounded-lg flex items-center gap-1.5">
             <Clock size={14} /> {slot.timeLabel} {duration > 1 && <span className="ml-1 text-xs bg-white/20 px-1.5 py-0.5 rounded">({toBn(duration)} ঘণ্টা)</span>}
           </span>
+          {user?.role === 'admin' && (
+            <button 
+              onClick={(e) => { e.stopPropagation(); onEditBooking && onEditBooking(groupBookings); }}
+              className="p-1.5 bg-white/10 hover:bg-white/30 rounded-lg transition-colors border border-white/20"
+              title="বুকিং সম্পাদনা (Admin)"
+            >
+              <Edit3 size={16} />
+            </button>
+          )}
         </div>
         
         <div className="space-y-1">
