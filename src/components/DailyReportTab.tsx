@@ -49,28 +49,18 @@ export const DailyReportTab: React.FC = () => {
       return;
     }
 
-    const startIso = startDate.toISOString();
-    const endIso = endDate.toISOString();
+    const { data, error } = await supabase.functions.invoke('get-daily-report', {
+      headers: { 'x-session-token': localStorage.getItem('session_token') || '' },
+      body: { date: selectedDate }
+    });
 
-    const { data: bData } = await supabase
-      .from('bookings')
-      .select('*, customers(name)')
-      .eq('date', selectedDate)
-      .neq('status', 'cancelled')
-      .order('start_time', { ascending: true });
-      
-    const { data: pData } = await supabase
-      .from('payments')
-      .select('*, bookings(date)')
-      .gte('created_at', startIso)
-      .lte('created_at', endIso);
-      
-    const { data: eData } = await supabase
-      .from('expenses')
-      .select('*')
-      .gte('created_at', startIso)
-      .lte('created_at', endIso)
-      .order('created_at', { ascending: true });
+    if (error || !data?.success) {
+      console.error(error || data?.error);
+      setLoading(false);
+      return;
+    }
+
+    const { bookings: bData, payments: pData, expenses: eData } = data;
     
     setBookings(bData || []);
     setExpenses(eData || []);
@@ -144,14 +134,16 @@ export const DailyReportTab: React.FC = () => {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       
-      const { data: bData } = await supabase
-        .from('bookings')
-        .select('*')
-        .gte('date', getBusinessDateStr(thirtyDaysAgo))
-        .neq('status', 'cancelled')
-        .order('date', { ascending: true });
+      const { data, error } = await supabase.functions.invoke('get-monthly-pnl', {
+        headers: { 'x-session-token': localStorage.getItem('session_token') || '' },
+        body: { 
+          start_date: getBusinessDateStr(thirtyDaysAgo),
+          end_date: getBusinessDateStr()
+        }
+      });
 
-      if (!bData) return;
+      if (error || !data?.success) return;
+      const bData = data.bookings;
       
       const headers = ['ID', 'Booking Date', 'Start Time', 'Phone', 'Total Price', 'Discount', 'Advance Paid', 'Due', 'Status'];
       const csvRows = [headers.join(',')];

@@ -28,19 +28,20 @@ export const Dashboard: React.FC = () => {
   }, []);
 
   const fetchBookings = async () => {
-    const { data, error } = await supabase
-      .from('bookings')
-      .select('*, customers(*)')
-      .eq('date', selectedDate)
-      .neq('status', 'cancelled');
+    const { data, error } = await supabase.functions.invoke('get-day', {
+      headers: {
+        'x-session-token': localStorage.getItem('session_token') || ''
+      },
+      body: { date: selectedDate }
+    });
       
     if (error) {
       console.error("Error fetching bookings:", error);
-    } else if (data) {
-      setBookings(data as Booking[]);
+    } else if (data && data.success) {
+      setBookings(data.bookings as Booking[]);
       
       if (activeBooked) {
-        const updatedBooking = data.find(b => b.id === activeBooked.booking.id);
+        const updatedBooking = data.bookings.find((b: any) => b.id === activeBooked.booking.id);
         if (updatedBooking) {
           setActiveBooked({ ...activeBooked, booking: updatedBooking as Booking });
         }

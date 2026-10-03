@@ -18,12 +18,18 @@ export const PnLCard: React.FC = () => {
   useEffect(() => {
     const fetchPnL = async () => {
       const now = new Date();
-      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-      const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString();
+      const firstDayDateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+      const lastDayDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      const lastDayDateStr = `${lastDayDate.getFullYear()}-${String(lastDayDate.getMonth() + 1).padStart(2, '0')}-${String(lastDayDate.getDate()).padStart(2, '0')}`;
 
-      const { data: payments } = await supabase.from('payments').select('*').gte('created_at', firstDay).lte('created_at', lastDay);
-      const { data: exps } = await supabase.from('expenses').select('amount').gte('created_at', firstDay).lte('created_at', lastDay);
-      const { data: bookings } = await supabase.from('bookings').select('discount, id').gte('date', firstDay).lte('date', lastDay).neq('status', 'cancelled');
+      const { data, error } = await supabase.functions.invoke('get-monthly-pnl', {
+        headers: { 'x-session-token': localStorage.getItem('session_token') || '' },
+        body: { start_date: firstDayDateStr, end_date: lastDayDateStr }
+      });
+
+      if (error || !data?.success) return;
+
+      const { payments, expenses: exps, bookings } = data;
 
       let rev = 0;
       let cTotal = 0;
