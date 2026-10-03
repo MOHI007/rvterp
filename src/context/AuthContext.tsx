@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-
 import type { AppSettings } from '../types';
 
 interface UserProfile {
@@ -13,8 +12,9 @@ interface AuthContextType {
   user: UserProfile | null;
   settings: AppSettings | null;
   loginWithPin: (pin: string) => Promise<boolean>;
-  logout: () => void;
+  logout: () => Promise<void>;
   fetchSettings: () => Promise<void>;
+  isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -22,46 +22,87 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [settings, setSettings] = useState<AppSettings | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const fetchSettings = async () => {
+    // We allow anon read on settings table (P2 says so)
     const { data } = await supabase.from('settings').select('*').limit(1).maybeSingle();
     if (data) setSettings(data as AppSettings);
   };
 
+  const validateSession = async () => {
+    const token = localStorage.getItem('session_token');
+    if (!token) {
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke('validate-session', {
+        headers: {
+          'x-session-token': token
+        }
+      });
+
+      if (error || !data || !data.success) {
+        localStorage.removeItem('session_token');
+        setUser(null);
+      } else {
+        setUser({ id: data.id, name: data.name, role: data.role as 'admin' | 'manager' });
+      }
+    } catch (err) {
+      console.error('Session validation error:', err);
+      localStorage.removeItem('session_token');
+    }
+    
+    setIsLoading(false);
+  };
+
   useEffect(() => {
     fetchSettings();
+    validateSession();
   }, []);
 
   const loginWithPin = async (pin: string) => {
-    if (pin === '0000') {
-      setUser({ id: 'admin-000', name: 'অ্যাডমিন (Test)', role: 'admin' });
+    try {
+      const { data, error } = await supabase.functions.invoke('verify-pin', {
+        body: { pin }
+      });
+
+      if (error || !data || !data.success) {
+        console.error('Login failed:', error?.message || data?.error);
+        return false;
+      }
+
+      localStorage.setItem('session_token', data.token);
+      setUser({ id: data.id, name: data.name, role: data.role as 'admin' | 'manager' });
       return true;
-    }
-
-    // Query the profiles table for the matching PIN
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('id, name, role')
-      .eq('pin', pin)
-      .limit(1)
-      .maybeSingle();
-
-    if (error || !data) {
-      console.error('Login failed:', error?.message);
+    } catch (err) {
+      console.error('Login error:', err);
       return false;
     }
-
-    setUser(data as UserProfile);
-
-    return true;
   };
 
-  const logout = () => {
+  const logout = async () => {
+    const token = localStorage.getItem('session_token');
+    if (token) {
+      try {
+        await supabase.functions.invoke('validate-session', {
+          method: 'DELETE',
+          headers: {
+            'x-session-token': token
+          }
+        });
+      } catch (err) {
+        console.error('Logout error:', err);
+      }
+    }
+    localStorage.removeItem('session_token');
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, settings, loginWithPin, logout, fetchSettings }}>
+    <AuthContext.Provider value={{ user, settings, loginWithPin, logout, fetchSettings, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

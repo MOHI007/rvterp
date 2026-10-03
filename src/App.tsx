@@ -6,8 +6,12 @@ import { AdminDashboard } from './components/AdminDashboard';
 import { Settings } from 'lucide-react';
 
 const MainApp = () => {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const [view, setView] = useState<'pos' | 'admin'>('pos');
+
+  if (isLoading) {
+    return <div className="min-h-screen flex items-center justify-center bg-gray-100">লোডিং...</div>;
+  }
 
   if (!user) {
     return <PinLogin />;
