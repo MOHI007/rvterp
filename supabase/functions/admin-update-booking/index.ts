@@ -29,10 +29,10 @@ serve(async (req) => {
     const numHours = parseInt(hours);
 
     if (discount < 0) throw new Error('Discount cannot be negative');
-    if (advance < 0) return new Response(JSON.stringify({ error: 'Advance cannot be negative' }), { status: 400, headers: corsHeaders });
-    if (numHours < 1 || numHours > 22) return new Response(JSON.stringify({ error: 'Hours must be between 1 and 22' }), { status: 400, headers: corsHeaders });
+    if (advance < 0) throw new Error('Advance cannot be negative');
+    if (numHours < 1 || numHours > 22) throw new Error('Hours must be between 1 and 22');
     if (advance > 0 && advanceMethod !== 'Cash' && (!advanceTrxId || advanceTrxId.length !== 4)) {
-      return new Response(JSON.stringify({ error: 'bKash/Nagad require 4-char TrxID' }), { status: 400, headers: corsHeaders });
+      throw new Error('bKash/Nagad require 4-char TrxID');
     }
 
     const supabaseClient = createClient(
@@ -88,7 +88,7 @@ serve(async (req) => {
     }
 
     if (settings?.force_advance_payment && advance <= 0) {
-      return new Response(JSON.stringify({ error: 'Advance payment is required' }), { status: 400, headers: corsHeaders });
+      throw new Error('Advance payment is required');
     }
 
     const netAmount = totalBasePrice - discount;
@@ -115,8 +115,7 @@ serve(async (req) => {
     });
 
     if (rpcError) {
-      // Return loud 500
-      return new Response(JSON.stringify({ error: rpcError.message || 'Transaction failed' }), { status: 500, headers: corsHeaders });
+      throw new Error(rpcError.message || 'Transaction failed');
     }
 
     return new Response(JSON.stringify({ success: true, booking_group_id: result.booking_group_id, receipt_id: result.receipt_id }), {
@@ -130,9 +129,9 @@ serve(async (req) => {
       return handleAuthError(err, corsHeaders);
     }
     return new Response(
-      JSON.stringify({ error: err.message || "An unexpected error occurred" }),
+      JSON.stringify({ success: false, error: err.message || "An unexpected error occurred" }),
       { 
-        status: 400, 
+        status: 200, 
         headers: { ...corsHeaders, "Content-Type": "application/json" } 
       }
     );
