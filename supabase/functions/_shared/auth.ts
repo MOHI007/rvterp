@@ -13,7 +13,7 @@ export async function requireAuth(req: Request) {
 
   const { data, error } = await supabaseClient
     .from('app_sessions')
-    .select('profile_id, role, expires_at')
+    .select('profile_id, expires_at, profiles(role)')
     .eq('token', token)
     .limit(1)
     .maybeSingle();
@@ -26,7 +26,8 @@ export async function requireAuth(req: Request) {
     throw new Error('Unauthorized: Session expired');
   }
 
-  return { profile_id: data.profile_id, role: data.role };
+  const profiles = data.profiles as any;
+  return { profile_id: data.profile_id, role: profiles?.role };
 }
 
 export function handleAuthError(err: any, corsHeaders: any) {
