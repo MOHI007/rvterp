@@ -10,6 +10,7 @@ interface ManagerPrintReportProps {
 export const ManagerPrintReport: React.FC<ManagerPrintReportProps> = ({ date }) => {
   const [bookings, setBookings] = useState<any[]>([]);
   const [expenses, setExpenses] = useState<any[]>([]);
+  const [incomes, setIncomes] = useState<any[]>([]);
   const [revenue, setRevenue] = useState(0);
   const [expenseTotal, setExpenseTotal] = useState(0);
   const [cashTotal, setCashTotal] = useState(0);
@@ -29,10 +30,10 @@ export const ManagerPrintReport: React.FC<ManagerPrintReportProps> = ({ date }) 
 
   useEffect(() => {
     const fetchData = async () => {
-      const startDate = new Date(`${date}T06:00:00`);
-      const endDate = new Date(startDate);
+      const startDate = new Date(`${date}T06:00:00+06:00`);
+      const endDate = new Date(startDate.getTime());
       endDate.setDate(endDate.getDate() + 1);
-      endDate.setHours(5, 59, 59, 999);
+      endDate.setMilliseconds(endDate.getMilliseconds() - 1);
       
       const startIso = startDate.toISOString();
       const endIso = endDate.toISOString();
@@ -56,9 +57,16 @@ export const ManagerPrintReport: React.FC<ManagerPrintReportProps> = ({ date }) 
         .gte('created_at', startIso)
         .lte('created_at', endIso)
         .order('created_at', { ascending: true });
+
+      const { data: iData } = await supabase
+        .from('other_income')
+        .select('*')
+        .eq('business_date', date)
+        .order('created_at', { ascending: true });
       
       setBookings(bData || []);
       setExpenses(eData || []);
+      setIncomes(iData || []);
       
       let rev = 0; let cash = 0; let bk = 0; let ng = 0;
       pData?.forEach(p => {
@@ -66,6 +74,13 @@ export const ManagerPrintReport: React.FC<ManagerPrintReportProps> = ({ date }) 
         if (p.method === 'Cash') cash += p.amount;
         else if (p.method === 'bKash') bk += p.amount;
         else if (p.method === 'Nagad') ng += p.amount;
+      });
+
+      iData?.forEach(i => {
+        rev += i.amount;
+        if (i.method === 'Cash') cash += i.amount;
+        else if (i.method === 'bKash') bk += i.amount;
+        else if (i.method === 'Nagad') ng += i.amount;
       });
 
       let exp = 0;
@@ -156,6 +171,26 @@ export const ManagerPrintReport: React.FC<ManagerPrintReportProps> = ({ date }) 
                   {e.note && <p className="text-[10px] text-gray-400 print:text-[9px]">{e.note}</p>}
                 </div>
                 <p className="text-sm font-bold print:text-[11px] print:text-black">৳{toBn(e.amount)}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="print:border-none print:shadow-none print:p-0 print:bg-transparent hidden print:block">
+        <h3 className="font-bold text-gray-800 flex items-center gap-2 print:text-xs print:mb-1 print:border-b print:border-black print:mt-2">অন্যান্য আয়ের তালিকা</h3>
+        {incomes.length === 0 ? (
+          <p className="text-sm text-gray-400 text-center py-2">কোনো অন্যান্য আয় নেই</p>
+        ) : (
+          <div className="print:space-y-1">
+            {incomes.map(i => (
+              <div key={i.id} className="flex justify-between items-center pb-2 print:border-dashed print:border-gray-400">
+                <div>
+                  <p className="text-xs font-bold text-gray-500 print:text-[10px]">{new Date(i.created_at).toLocaleTimeString('bn-BD', {hour: '2-digit', minute:'2-digit'})}</p>
+                  <p className="text-sm font-bold text-gray-800 print:text-[11px]">{i.category}</p>
+                  {i.note && <p className="text-[10px] text-gray-400 print:text-[9px]">{i.note}</p>}
+                </div>
+                <p className="text-sm font-bold print:text-[11px] print:text-black">৳{toBn(i.amount)}</p>
               </div>
             ))}
           </div>

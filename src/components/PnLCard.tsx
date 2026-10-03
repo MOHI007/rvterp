@@ -36,20 +36,7 @@ export const PnLCard: React.FC = () => {
       let bkTotal = 0;
       let ngTotal = 0;
       
-      // Calculate revenue from legacy bookings that don't have payment records
-      bookings?.forEach((b: any) => {
-        const netPaid = (b.total_price || 0) - (b.discount || 0) - (b.due_amount || 0);
-        if (netPaid > 0) {
-          const bPayments = payments?.filter((p: any) => p.booking_id === b.id) || [];
-          const paymentSum = bPayments.reduce((sum: number, p: any) => sum + p.amount, 0);
-          const missingAmount = netPaid - paymentSum;
-          
-          if (missingAmount > 0) {
-            rev += missingAmount;
-            cTotal += missingAmount; // Assume cash for legacy missing records
-          }
-        }
-      });
+
 
       // Add revenue and method totals from valid payment records
       payments?.forEach((p: any) => {

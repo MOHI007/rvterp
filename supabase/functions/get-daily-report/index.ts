@@ -25,10 +25,12 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const startDate = new Date(`${date}T06:00:00`);
-    const endDate = new Date(startDate);
+    // F-A Window Fix: Server runs in UTC. Explicitly append +06:00 offset to
+    // build the window correctly for Dhaka time, otherwise 06:00-12:00 local payments are dropped.
+    const startDate = new Date(`${date}T06:00:00+06:00`);
+    const endDate = new Date(startDate.getTime());
     endDate.setDate(endDate.getDate() + 1);
-    endDate.setHours(5, 59, 59, 999);
+    endDate.setMilliseconds(endDate.getMilliseconds() - 1);
     
     if (isNaN(startDate.getTime())) {
       return new Response(JSON.stringify({ error: 'Invalid date format' }), { status: 400, headers: corsHeaders });
@@ -40,7 +42,8 @@ serve(async (req) => {
     const [
       { data: bookings, error: bError },
       { data: payments, error: pError },
-      { data: expenses, error: eError }
+      { data: expenses, error: eError },
+      { data: incomes, error: iError }
     ] = await Promise.all([
       supabaseClient
         .from('bookings')
@@ -50,7 +53,7 @@ serve(async (req) => {
         .order('start_time', { ascending: true }),
       supabaseClient
         .from('payments')
-        .select('*, bookings(date)')
+        .select('*, bookings(date, status)')
         .gte('created_at', startIso)
         .lte('created_at', endIso),
       supabaseClient
@@ -58,14 +61,20 @@ serve(async (req) => {
         .select('*')
         .gte('created_at', startIso)
         .lte('created_at', endIso)
+        .order('created_at', { ascending: true }),
+      supabaseClient
+        .from('other_income')
+        .select('*')
+        .eq('business_date', date)
         .order('created_at', { ascending: true })
     ]);
 
     if (bError) throw bError;
     if (pError) throw pError;
     if (eError) throw eError;
+    if (iError) throw iError;
 
-    return new Response(JSON.stringify({ success: true, bookings, payments, expenses }), {
+    return new Response(JSON.stringify({ success: true, bookings, payments, expenses, incomes }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

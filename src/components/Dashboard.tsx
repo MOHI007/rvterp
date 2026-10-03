@@ -7,8 +7,9 @@ import { SlotCard } from './SlotCard';
 import { BookingModal } from './BookingModal';
 import { ActiveBookingDetails } from './ActiveBookingDetails';
 import { ExpenseModal } from './ExpenseModal';
+import { IncomeModal } from './IncomeModal';
 import { ManagerPrintReport } from './ManagerPrintReport';
-import { Calendar, ChevronLeft, ChevronRight, LogOut, Wallet, Printer } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, LogOut, Wallet, Printer, TrendingUp } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
   const { user, logout, settings } = useAuth();
@@ -19,6 +20,7 @@ export const Dashboard: React.FC = () => {
   const [activeSlot, setActiveSlot] = useState<Slot | null>(null);
   const [activeBooked, setActiveBooked] = useState<{ booking: Booking, slot: Slot, duration: number } | null>(null);
   const [showExpense, setShowExpense] = useState(false);
+  const [showIncome, setShowIncome] = useState(false);
   
   // Force re-render every minute to keep past slots hiding dynamically
   const [, setTick] = useState(0);
@@ -125,6 +127,15 @@ export const Dashboard: React.FC = () => {
           </div>
           
           <div className="flex items-center gap-3 flex-shrink-0">
+            {/* Income Button */}
+            <button 
+              onClick={() => setShowIncome(true)}
+              title="অন্যান্য আয় যোগ করুন"
+              className="w-10 h-10 bg-white/20 hover:bg-green-500/30 border border-white/30 rounded-full shadow-sm backdrop-blur-sm transition-all flex items-center justify-center text-white"
+            >
+              <TrendingUp size={20} />
+            </button>
+
             {/* Expense Button */}
             <button 
               onClick={() => setShowExpense(true)}
@@ -226,6 +237,16 @@ export const Dashboard: React.FC = () => {
           onSuccess={() => {
             setShowExpense(false);
             alert('খরচ এন্ট্রি সফল হয়েছে!');
+          }} 
+        />
+      )}
+
+      {showIncome && (
+        <IncomeModal 
+          onClose={() => setShowIncome(false)} 
+          onSuccess={() => {
+            setShowIncome(false);
+            alert('আয় এন্ট্রি সফল হয়েছে!');
           }} 
         />
       )}
