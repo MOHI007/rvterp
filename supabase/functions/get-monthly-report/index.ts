@@ -28,6 +28,9 @@ serve(async (req) => {
     // Format strings for LIKE/gte comparisons
     const monthStr = month.toString().padStart(2, '0');
     const yearMonthStr = `${year}-${monthStr}`;
+    const startStr = `${yearMonthStr}-01`;
+    const tempDate = new Date(year, month, 0); // gets the last day of the month
+    const endStr = `${yearMonthStr}-${tempDate.getDate().toString().padStart(2, '0')}`;
 
     // For expenses, we need to construct a window in UTC that maps to the BD time month boundaries
     const startDate = new Date(`${yearMonthStr}-01T06:00:00+06:00`);
@@ -51,7 +54,8 @@ serve(async (req) => {
       supabaseClient
         .from('payments')
         .select('amount, method, bookings!inner(date, status)')
-        .like('bookings.date', `${yearMonthStr}-%`),
+        .gte('bookings.date', startStr)
+        .lte('bookings.date', endStr),
       // Expenses by created_at window
       supabaseClient
         .from('expenses')
@@ -62,7 +66,8 @@ serve(async (req) => {
       supabaseClient
         .from('other_income')
         .select('amount')
-        .like('business_date', `${yearMonthStr}-%`)
+        .gte('business_date', startStr)
+        .lte('business_date', endStr)
     ]);
 
     if (pError) throw pError;
@@ -89,6 +94,10 @@ serve(async (req) => {
     });
 
   } catch (err: any) {
-    return handleAuthError(err, corsHeaders);
+    // Return 200 with structured JSON to avoid CORS swallowing actual errors
+    return new Response(JSON.stringify({ success: false, error: err.message }), { 
+      status: 200, 
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
   }
 });

@@ -26,10 +26,12 @@ export const MonthlyReportTab: React.FC = () => {
       if (error) throw error;
       if (result?.success) {
         setData(result);
+      } else {
+        throw new Error(result?.error || 'অজানা ত্রুটি');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error fetching monthly report:", err);
-      alert("রিপোর্ট ফেচ করতে সমস্যা হয়েছে");
+      alert(`রিপোর্ট ফেচ করতে সমস্যা হয়েছে: ${err.message}`);
     } finally {
       setIsLoading(false);
     }
