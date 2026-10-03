@@ -48,6 +48,7 @@ export interface AppSettings {
   print_office_copy?: boolean;
   print_expense_voucher?: boolean;
   expense_categories?: string[];
+  income_categories?: string[];
 }
 
 export const generateDailySlots = (settings?: AppSettings): Slot[] => {

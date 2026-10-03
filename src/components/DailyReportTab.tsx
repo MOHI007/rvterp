@@ -2,17 +2,22 @@ import React, { useState, useEffect } from 'react';
 import { getBusinessDateStr } from '../utils/dateUtils';
 import { createPortal } from 'react-dom';
 import { supabase } from '../lib/supabase';
-import { Calendar, Printer, Copy, FileText, ArrowDown, ArrowUp, Wallet, Download } from 'lucide-react';
+import { Calendar, Printer, Copy, FileText, ArrowDown, ArrowUp, Wallet, Download, Trash2, Edit3 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { IncomeModal } from './IncomeModal';
 import { BkashIcon } from './icons/BkashIcon';
 import { NagadIcon } from './icons/NagadIcon';
 
 export const DailyReportTab: React.FC = () => {
+  const { user } = useAuth();
   const [selectedDate, setSelectedDate] = useState(() => getBusinessDateStr());
   const [loading, setLoading] = useState(true);
   const [isGeneratingCSV, setIsGeneratingCSV] = useState(false);
   
   const [bookings, setBookings] = useState<any[]>([]);
   const [expenses, setExpenses] = useState<any[]>([]);
+  const [incomes, setIncomes] = useState<any[]>([]);
+  const [incomeToEdit, setIncomeToEdit] = useState<any>(null);
   
   const [revenue, setRevenue] = useState(0);
   const [sameDayRev, setSameDayRev] = useState(0);
@@ -60,10 +65,11 @@ export const DailyReportTab: React.FC = () => {
       return;
     }
 
-    const { bookings: bData, payments: pData, expenses: eData } = data;
+    const { bookings: bData, payments: pData, expenses: eData, incomes: iData } = data;
     
     setBookings(bData || []);
     setExpenses(eData || []);
+    setIncomes(iData || []);
     
     let sdRev = 0; // Today's bookings income
     let fRev = 0;  // Future advance collected today
@@ -106,9 +112,15 @@ export const DailyReportTab: React.FC = () => {
         if (bDate > selectedDate) fRev += p.amount;
         else if (bDate < selectedDate) pRev += p.amount;
         // if bDate === selectedDate, it's already included in sdRev via bookings loop above
-      } else {
-        oRev += p.amount;
       }
+    });
+
+    // 3. Process other_income
+    iData?.forEach((i: any) => {
+      oRev += i.amount;
+      if (i.method === 'Cash') cash += i.amount;
+      else if (i.method === 'bKash') bk += i.amount;
+      else if (i.method === 'Nagad') ng += i.amount;
     });
 
     const rev = sdRev + fRev + pRev + oRev;
@@ -133,6 +145,23 @@ export const DailyReportTab: React.FC = () => {
     fetchData();
   }, [selectedDate]);
 
+  const handleDeleteIncome = async (id: string) => {
+    if (!window.confirm('আপনি কি নিশ্চিত যে এই আয়টি ডিলিট করতে চান?')) return;
+    try {
+      const { data, error } = await supabase.functions.invoke('delete-income', {
+        headers: { 'x-session-token': localStorage.getItem('session_token') || '' },
+        body: { id }
+      });
+      if (error || !data?.success) throw new Error(data?.error || error?.message);
+      
+      alert('আয় ডিলিট করা হয়েছে!');
+      fetchData(); // refresh
+    } catch (err: any) {
+      console.error(err);
+      alert('আয় ডিলিট করতে সমস্যা হয়েছে।');
+    }
+  };
+
   const cashExpenses = expenses.reduce((sum, e) => (e.method === 'Cash' || !e.method) ? sum + e.amount : sum, 0);
   const netCash = cashTotal - cashExpenses;
 
@@ -148,7 +177,7 @@ export const DailyReportTab: React.FC = () => {
                  `  - আজকের বুকিং থেকে: ৳${toBn(sameDayRev)}\n` +
                  `  - ভবিষ্যৎ বুকিংয়ের অগ্রিম: ৳${toBn(futureRev)}\n` +
                  `  - পুরাতন বকেয়া আদায়: ৳${toBn(pastRev)}\n` +
-                 (otherRev > 0 ? `  - অন্যান্য: ৳${toBn(otherRev)}\n` : '') + `\n` +
+                 `  - অন্যান্য আয়: ৳${toBn(otherRev)}\n\n` +
                  `আজকের খরচ: ৳${toBn(expenseTotal)}\n` +
                  `---------------------------\n` +
                  `মোট ক্যাশ কালেকশন: ৳${toBn(cashTotal)}\n` +
@@ -223,7 +252,7 @@ export const DailyReportTab: React.FC = () => {
             <div className="flex justify-between"><span>আজকের বুকিং:</span><span>৳{toBn(sameDayRev)}</span></div>
             <div className="flex justify-between"><span>ভবিষ্যৎ অগ্রিম:</span><span>৳{toBn(futureRev)}</span></div>
             <div className="flex justify-between"><span>পুরাতন বকেয়া:</span><span>৳{toBn(pastRev)}</span></div>
-            {otherRev > 0 && <div className="flex justify-between"><span>অন্যান্য:</span><span>৳{toBn(otherRev)}</span></div>}
+            <div className="flex justify-between"><span>অন্যান্য আয়:</span><span>৳{toBn(otherRev)}</span></div>
           </div>
         </div>
         <div className="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 print:border-none print:shadow-none print:p-0 print:flex print:justify-between print:bg-transparent">
@@ -342,6 +371,39 @@ export const DailyReportTab: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Incomes List */}
+      <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 print:border-none print:shadow-none print:p-0 print:bg-transparent mt-4 print:mt-2">
+        <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2 print:text-xs print:mb-1 print:border-b print:border-black"><ArrowUp size={16} className="print:hidden text-green-500"/> অন্যান্য আয়ের তালিকা</h3>
+        {incomes.length === 0 ? (
+          <p className="text-sm text-gray-400 text-center py-2">কোনো অন্যান্য আয় নেই</p>
+        ) : (
+          <div className="space-y-3 print:space-y-1">
+            {incomes.map(i => (
+              <div key={i.id} className="flex justify-between items-center border-b border-gray-50 pb-2 last:border-0 last:pb-0 print:border-dashed print:border-gray-400">
+                <div>
+                  <p className="text-xs font-bold text-gray-500 print:text-[10px]">{new Date(i.created_at).toLocaleTimeString('bn-BD', {hour: '2-digit', minute:'2-digit'})}</p>
+                  <p className="text-sm font-bold text-gray-800 print:text-[11px]">{i.category} <span className="text-[10px] text-gray-500">({i.method || 'Cash'})</span></p>
+                  {i.note && <p className="text-[10px] text-gray-400 print:text-[9px]">{i.note}</p>}
+                </div>
+                <div className="flex items-center gap-4">
+                  <p className="text-sm font-bold text-green-600 print:text-[11px] print:text-black">৳{toBn(i.amount)}</p>
+                  {user?.role === 'admin' && (
+                    <div className="flex items-center gap-2 print:hidden">
+                      <button onClick={() => setIncomeToEdit(i)} className="p-1.5 bg-gray-100 text-gray-500 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors">
+                        <Edit3 size={14} />
+                      </button>
+                      <button onClick={() => handleDeleteIncome(i.id)} className="p-1.5 bg-gray-100 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
       
       <div className="hidden print:block text-center mt-4 border-t border-black pt-2 pb-6">
         <p className="text-[10px]">Dev by Engr. A N M AL MUHI</p>
@@ -392,6 +454,18 @@ export const DailyReportTab: React.FC = () => {
           {reportContent}
         </div>,
         document.body
+      )}
+
+      {incomeToEdit && (
+        <IncomeModal 
+          incomeToEdit={incomeToEdit}
+          onClose={() => setIncomeToEdit(null)}
+          onSuccess={() => {
+            setIncomeToEdit(null);
+            alert('আয় আপডেট করা হয়েছে!');
+            fetchData();
+          }}
+        />
       )}
 
       {/* CSV Download Button */}

@@ -16,7 +16,10 @@ export const SettingsTab: React.FC = () => {
   const [printOfficeCopy, setPrintOfficeCopy] = useState(true);
   const [printExpenseVoucher, setPrintExpenseVoucher] = useState(false);
   const [expenseCategories, setExpenseCategories] = useState<string[]>(['মেইনটেন্যান্স', 'ইউটিলিটি', 'বিবিধ']);
-  const [newCategory, setNewCategory] = useState('');
+  const [newExpenseCategory, setNewExpenseCategory] = useState('');
+
+  const [incomeCategories, setIncomeCategories] = useState<string[]>(['পুরাতন বল বিক্রি', 'জার্সি ভাড়া', 'পানি/খাবার', 'অন্যান্য']);
+  const [newIncomeCategory, setNewIncomeCategory] = useState('');
   
   const [isSaving, setIsSaving] = useState(false);
 
@@ -33,6 +36,9 @@ export const SettingsTab: React.FC = () => {
       setPrintExpenseVoucher(settings.print_expense_voucher ?? false);
       if (settings.expense_categories && settings.expense_categories.length > 0) {
         setExpenseCategories(settings.expense_categories);
+      }
+      if (settings.income_categories && settings.income_categories.length > 0) {
+        setIncomeCategories(settings.income_categories);
       }
     }
   }, [settings]);
@@ -52,7 +58,8 @@ export const SettingsTab: React.FC = () => {
         force_advance_payment: forceAdvance,
         print_office_copy: printOfficeCopy,
         print_expense_voucher: printExpenseVoucher,
-        expense_categories: expenseCategories
+        expense_categories: expenseCategories,
+        income_categories: incomeCategories
       };
       
       const { data, error } = await supabase.functions.invoke('update-settings', {
@@ -176,27 +183,78 @@ export const SettingsTab: React.FC = () => {
             <input 
               type="text" 
               placeholder="নতুন ক্যাটাগরি..." 
-              value={newCategory}
-              onChange={e => setNewCategory(e.target.value)}
+              value={newExpenseCategory}
+              onChange={e => setNewExpenseCategory(e.target.value)}
               onKeyDown={e => {
-                if (e.key === 'Enter' && newCategory.trim()) {
+                if (e.key === 'Enter' && newExpenseCategory.trim()) {
                   e.preventDefault();
-                  if (!expenseCategories.includes(newCategory.trim())) {
-                    setExpenseCategories([...expenseCategories, newCategory.trim()]);
+                  if (!expenseCategories.includes(newExpenseCategory.trim())) {
+                    setExpenseCategories([...expenseCategories, newExpenseCategory.trim()]);
                   }
-                  setNewCategory('');
+                  setNewExpenseCategory('');
                 }
               }}
               className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-brand-orange text-sm font-semibold text-gray-800" 
             />
             <button 
               onClick={() => {
-                if (newCategory.trim() && !expenseCategories.includes(newCategory.trim())) {
-                  setExpenseCategories([...expenseCategories, newCategory.trim()]);
-                  setNewCategory('');
+                if (newExpenseCategory.trim() && !expenseCategories.includes(newExpenseCategory.trim())) {
+                  setExpenseCategories([...expenseCategories, newExpenseCategory.trim()]);
+                  setNewExpenseCategory('');
                 }
               }}
               className="px-4 py-2 bg-gray-800 text-white rounded-xl text-sm font-bold flex items-center gap-1 active:scale-95 transition-transform"
+            >
+              <Plus size={16} /> যুক্ত
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 space-y-4">
+        <h3 className="font-bold text-gray-800 border-b border-gray-100 pb-2">অন্যান্য আয়ের সেটিংস (Income Settings)</h3>
+        
+        <div className="pt-2">
+          <label className="block text-xs font-bold text-gray-500 mb-2">আয়ের ক্যাটাগরি ম্যানেজমেন্ট</label>
+          <div className="flex flex-wrap gap-2 mb-3">
+            {incomeCategories.map((cat, idx) => (
+              <div key={idx} className="flex items-center gap-1 bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm font-semibold">
+                {cat}
+                <button 
+                  onClick={() => setIncomeCategories(incomeCategories.filter((_, i) => i !== idx))}
+                  className="text-gray-400 hover:text-red-500 transition-colors ml-1"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+          
+          <div className="flex gap-2">
+            <input 
+              type="text" 
+              placeholder="নতুন আয়ের ক্যাটাগরি..." 
+              value={newIncomeCategory}
+              onChange={e => setNewIncomeCategory(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && newIncomeCategory.trim()) {
+                  e.preventDefault();
+                  if (!incomeCategories.includes(newIncomeCategory.trim())) {
+                    setIncomeCategories([...incomeCategories, newIncomeCategory.trim()]);
+                  }
+                  setNewIncomeCategory('');
+                }
+              }}
+              className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-green-500 text-sm font-semibold text-gray-800" 
+            />
+            <button 
+              onClick={() => {
+                if (newIncomeCategory.trim() && !incomeCategories.includes(newIncomeCategory.trim())) {
+                  setIncomeCategories([...incomeCategories, newIncomeCategory.trim()]);
+                  setNewIncomeCategory('');
+                }
+              }}
+              className="px-4 py-2 bg-green-600 text-white rounded-xl text-sm font-bold flex items-center gap-1 active:scale-95 transition-transform"
             >
               <Plus size={16} /> যুক্ত
             </button>

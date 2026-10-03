@@ -35,9 +35,15 @@ serve(async (req) => {
       .eq('date', date)
       .neq('status', 'cancelled');
 
-    if (error) throw error;
+    const { data: incomes, error: incomesError } = await supabaseClient
+      .from('other_income')
+      .select('*')
+      .eq('business_date', date);
 
-    return new Response(JSON.stringify({ success: true, bookings: data }), {
+    if (error) throw error;
+    if (incomesError) throw incomesError;
+
+    return new Response(JSON.stringify({ success: true, bookings: data, incomes }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
