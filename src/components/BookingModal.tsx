@@ -121,65 +121,32 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selecte
     try {
       const finalName = name.trim() || 'অজানা গ্রাহক';
       
-      // 1. Upsert Customer (Increment Total Matches ONLY if Fully Paid)
-      const isFullyPaid = dueAmount === 0;
-      let newMatchCount = isExistingCustomer ? totalMatches : 0;
-      if (isFullyPaid) {
-        newMatchCount += 1;
-      }
-      
-      await supabase.from('customers').upsert({
-        phone_number: phone,
-        name: finalName,
-        total_matches: newMatchCount
-      }, { onConflict: 'phone_number' });
+      // Call create-booking Edge Function
+      const { data, error } = await supabase.functions.invoke('create-booking', {
+        headers: {
+          'x-session-token': localStorage.getItem('session_token') || ''
+        },
+        body: {
+          date: selectedDate,
+          start_time: initialSlot.startTime,
+          hours,
+          phone,
+          name: finalName,
+          discount: parsedDiscount,
+          advance: parsedAdvance,
+          advanceMethod,
+          advanceTrxId
+        }
+      });
 
-      // Generate Receipt ID
-      const dateObj = new Date(selectedDate);
-      const yy = dateObj.getFullYear().toString().slice(-2);
-      const mm = (dateObj.getMonth() + 1).toString().padStart(2, '0');
-      const dd = dateObj.getDate().toString().padStart(2, '0');
-      
-      const { count } = await supabase
-        .from('bookings')
-        .select('*', { count: 'exact', head: true })
-        .eq('date', selectedDate);
-        
-      const sequence = ((count || 0) + 1).toString().padStart(2, '0');
-      const receiptId = `${yy}${mm}${dd}${sequence}`;
-
-      // 2. Insert Booking (ignoring end time calculation accuracy for this phase)
-      const { data: booking, error: bookingError } = await supabase.from('bookings').insert({
-        receipt_id: receiptId,
-        date: selectedDate,
-        start_time: initialSlot.startTime,
-        end_time: initialSlot.endTime, 
-        customer_phone: phone,
-        total_price: basePrice,
-        discount: parsedDiscount,
-        advance_paid: parseInt(advance) || 0,
-        due_amount: dueAmount,
-        status: 'confirmed',
-        booked_by_role: user?.role || 'manager'
-      }).select().single();
-
-      if (bookingError) throw bookingError;
-
-      // 3. Insert Advance Payment
-      if ((parseInt(advance) || 0) > 0 && booking) {
-        await supabase.from('payments').insert({
-          booking_id: booking.id,
-          method: advanceMethod,
-          last_4_digits: advanceMethod !== 'Cash' ? advanceTrxId : null,
-          amount: parseInt(advance),
-          type: 'Advance'
-        });
+      if (error || !data?.success) {
+        throw new Error(data?.error || error?.message || 'বুকিং তৈরি করা যায়নি');
       }
 
       onSuccess();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Booking Error:', err);
-      setErrorMsg('বুকিং সম্পন্ন করা যায়নি। ইন্টারনেট সংযোগ চেক করুন।');
+      setErrorMsg(err.message || 'বুকিং সম্পন্ন করা যায়নি। ইন্টারনেট সংযোগ চেক করুন।');
     } finally {
       setIsSubmitting(false);
     }
