@@ -43,6 +43,9 @@ CREATE POLICY "Anon can read settings" ON settings
 -- Add method column to expenses and set default
 ALTER TABLE expenses ADD COLUMN IF NOT EXISTS method text DEFAULT 'Cash';
 
+-- Add booking_group_id to bookings
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS booking_group_id uuid;
+
 -- Replace UNIQUE(date, start_time) with partial unique index to allow overlapping cancelled slots
 ALTER TABLE bookings DROP CONSTRAINT IF EXISTS bookings_date_start_time_key;
 DROP INDEX IF EXISTS bookings_date_start_time_idx;
@@ -57,3 +60,24 @@ ALTER TABLE payments ADD CONSTRAINT payments_amount_check CHECK (amount >= 0);
 
 ALTER TABLE expenses DROP CONSTRAINT IF EXISTS expenses_amount_check;
 ALTER TABLE expenses ADD CONSTRAINT expenses_amount_check CHECK (amount >= 0);
+
+-- RPC for atomic receipt counter
+CREATE OR REPLACE FUNCTION increment_receipt_counter(p_date date)
+RETURNS int
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_next int;
+BEGIN
+  INSERT INTO receipt_counters (business_date, last_n)
+  VALUES (p_date, 1)
+  ON CONFLICT (business_date) DO UPDATE SET 
+    last_n = receipt_counters.last_n + 1
+  RETURNING last_n INTO v_next;
+  RETURN v_next;
+END;
+$$;
+REVOKE ALL ON FUNCTION increment_receipt_counter(date) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION increment_receipt_counter(date) TO service_role;
