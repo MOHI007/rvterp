@@ -35,13 +35,11 @@ export const ExpenseModal: React.FC<Props> = ({ onClose, onSuccess }) => {
     setIsSubmitting(true);
     try {
       const enAmount = parseFloat(toEn(amount)) || 0;
-      const { error } = await supabase.from('expenses').insert({
-        amount: enAmount,
-        category,
-        method,
-        note
+      const { data, error } = await supabase.functions.invoke('record-expense', {
+        headers: { 'x-session-token': localStorage.getItem('session_token') || '' },
+        body: { amount: enAmount, category, method, note }
       });
-      if (error) throw error;
+      if (error || !data?.success) throw new Error(data?.error || error?.message);
       
       if (settings?.print_expense_voucher) {
         window.print();
