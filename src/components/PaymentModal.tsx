@@ -11,6 +11,7 @@ interface PaymentModalProps {
 
 export const PaymentModal: React.FC<PaymentModalProps> = ({ booking, onClose, onSuccess }) => {
   const [method, setMethod] = useState<'Cash' | 'bKash' | 'Nagad'>('Cash');
+  const [amount, setAmount] = useState(booking.due_amount.toString());
   const [last4, setLast4] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -28,45 +29,36 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ booking, onClose, on
     setErrorMsg('');
 
     try {
-      // 1. Log Payment
-      const { error: paymentError } = await supabase.from('payments').insert({
-        booking_id: booking.id,
-        method,
-        last_4_digits: method === 'Cash' ? null : last4,
-        amount: booking.due_amount,
-        type: 'Due'
+      const parsedAmount = parseInt(amount) || 0;
+      if (parsedAmount <= 0) {
+        setErrorMsg('পরিমাণ ০ এর বেশি হতে হবে।');
+        return;
+      }
+      if (parsedAmount > booking.due_amount) {
+        setErrorMsg('পরিমাণ বকেয়ার বেশি হতে পারবে না।');
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('collect-due', {
+        headers: {
+          'x-session-token': localStorage.getItem('session_token') || ''
+        },
+        body: {
+          booking_id: booking.id,
+          amount: parsedAmount,
+          method,
+          last_4_digits: method === 'Cash' ? null : last4
+        }
       });
 
-      if (paymentError) throw paymentError;
-
-      // 2. Clear Due from Booking
-      const { error: bookingUpdateError } = await supabase
-        .from('bookings')
-        .update({ due_amount: 0 })
-        .eq('id', booking.id);
-
-      if (bookingUpdateError) throw bookingUpdateError;
-
-      // 3. Increment Customer total_matches since the booking is now fully paid
-      if (booking.customer_phone) {
-        const { data: customerData } = await supabase
-          .from('customers')
-          .select('total_matches')
-          .eq('phone_number', booking.customer_phone)
-          .single();
-          
-        if (customerData) {
-          await supabase
-            .from('customers')
-            .update({ total_matches: (customerData.total_matches || 0) + 1 })
-            .eq('phone_number', booking.customer_phone);
-        }
+      if (error || !data?.success) {
+        throw new Error(data?.error || error?.message || 'পেমেন্ট সেভ করতে সমস্যা হয়েছে।');
       }
 
       onSuccess();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setErrorMsg('পেমেন্ট সেভ করতে সমস্যা হয়েছে।');
+      setErrorMsg(err.message || 'পেমেন্ট সেভ করতে সমস্যা হয়েছে।');
     } finally {
       setIsSubmitting(false);
     }
@@ -90,6 +82,19 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ booking, onClose, on
           <div className="text-center p-4 bg-red-50 rounded-2xl border border-red-100">
             <p className="text-red-500 font-semibold mb-1">মোট বকেয়া পরিমাণ</p>
             <p className="text-3xl font-bold text-red-600">৳{toBn(booking.due_amount)}</p>
+          </div>
+
+          <div className="space-y-3">
+            <label className="block text-sm font-medium text-gray-600">গ্রহণের পরিমাণ (৳)</label>
+            <input 
+              type="number" 
+              required
+              min="1"
+              max={booking.due_amount}
+              value={amount} 
+              onChange={(e) => setAmount(e.target.value)}
+              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-orange outline-none font-bold text-xl text-center"
+            />
           </div>
 
           <div className="space-y-3">
