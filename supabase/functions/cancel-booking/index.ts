@@ -39,6 +39,16 @@ serve(async (req) => {
     });
 
   } catch (err: any) {
-    return handleAuthError(err, corsHeaders);
+    console.error("Booking Edge Function Error:", err);
+    if (err.message?.includes('Unauthorized')) {
+      return handleAuthError(err, corsHeaders);
+    }
+    return new Response(
+      JSON.stringify({ error: err.message || "An unexpected error occurred" }),
+      { 
+        status: 400, 
+        headers: { ...corsHeaders, "Content-Type": "application/json" } 
+      }
+    );
   }
 });
