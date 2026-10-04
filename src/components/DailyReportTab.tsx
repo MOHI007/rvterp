@@ -111,33 +111,37 @@ export const DailyReportTab: React.FC = () => {
     let bk = 0; 
     let ng = 0;
 
-    // 1. Process payments — all are now strictly scoped to bookings on selectedDate
-    //    (edge function fetches payments via bookings.date join, not created_at window)
+    // Calculate method totals from payments table if available
     if (pData.length > 0) {
       pData.forEach((p: any) => {
         if (p.method === 'Cash') cash += p.amount;
         else if (p.method === 'bKash') bk += p.amount;
         else if (p.method === 'Nagad') ng += p.amount;
-
-        if (p.bookings?.status === 'cancelled') {
-          cRev += p.amount;
-        } else {
-          sdRev += p.amount;
-        }
-      });
-    } else {
-      // Fallback: sum advance_paid directly from the day's bookings
-      const processedGroups = new Set();
-      bData.forEach((b: any) => {
-        const groupId = b.booking_group_id || b.id;
-        if (!processedGroups.has(groupId)) {
-          const amt = Number(b.advance_paid) || 0;
-          sdRev += amt;
-          cash += amt;
-          processedGroups.add(groupId);
-        }
       });
     }
+    
+    // Always calculate revenue categories strictly from the active bookings array
+    // to prevent any mismatches between the UI list and the top metric
+    const processedGroups = new Set();
+    bData.forEach((b: any) => {
+      const groupId = b.booking_group_id || b.id;
+      if (!processedGroups.has(groupId)) {
+        const amt = Number(b.advance_paid) || 0;
+        
+        if (b.status === 'cancelled') {
+          cRev += amt;
+        } else {
+          sdRev += amt;
+        }
+
+        // Fallback for cash total if payments table is empty
+        if (pData.length === 0) {
+          cash += amt;
+        }
+        
+        processedGroups.add(groupId);
+      }
+    });
 
     // 3. Process other_income
     iData?.forEach((i: any) => {
@@ -187,8 +191,7 @@ export const DailyReportTab: React.FC = () => {
     }
   };
 
-  const cashExpenses = expenses.reduce((sum, e) => (e.method === 'Cash' || !e.method) ? sum + e.amount : sum, 0);
-  const netCash = cashTotal - cashExpenses;
+  const netCash = (cashTotal + bkashTotal + nagadTotal) - expenseTotal;
 
   const handlePrint = () => {
     window.print();
@@ -345,7 +348,7 @@ export const DailyReportTab: React.FC = () => {
                     <p className="text-sm font-bold text-gray-800 print:text-[11px]">{b.customers?.name || b.customer_phone}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-bold text-gray-800 print:text-[11px]">৳{toBn(b.total_price - (b.discount || 0))} <span className="text-[10px] text-gray-400 font-normal">নেট</span></p>
+                    <p className="text-sm font-bold text-gray-800 print:text-[11px]">৳{toBn(b.advance_paid || 0)} <span className="text-[10px] text-gray-400 font-normal">নেট</span></p>
                     {b.due_amount > 0 ? (
                       <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-bold print:border print:border-black print:bg-transparent print:text-black">বকেয়া: ৳{toBn(b.due_amount)}</span>
                     ) : (
