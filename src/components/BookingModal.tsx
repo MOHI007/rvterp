@@ -81,12 +81,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selecte
     const fetchCustomer = async () => {
       console.log("Looking up:", normalizedNumber);
       
-      const { data, error } = await supabase
-        .from('customers')
-        .select('*')
-        .ilike('phone_number', `%${normalizedNumber}%`)
-        .limit(1)
-        .maybeSingle();
+      const { data, error } = await supabase.rpc('lookup_customer', { p_phone: normalizedNumber });
         
       console.log("DB Response:", data, "DB Error:", error);
       
