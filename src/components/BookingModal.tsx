@@ -64,8 +64,9 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selecte
 
   // Auto-lookup customer
   useEffect(() => {
-    if (phone.length !== 11) {
-      if (phone === initialPhone && primaryBooking) {
+    const normalizedNumber = toEnglishDigits(phone);
+    if (normalizedNumber.length !== 11) {
+      if (primaryBooking && phone === initialPhone) {
         setName(initialName);
         setIsExistingCustomer(true);
       } else {
@@ -78,20 +79,21 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selecte
     }
 
     const fetchCustomer = async () => {
-      const enPhone = toEnglishDigits(phone);
+      const enPhone = normalizedNumber;
       const bnPhone = toBnDigits(phone);
+      
       const { data, error } = await supabase
         .from('customers')
         .select('*')
-        .in('phone_number', [phone, enPhone, bnPhone])
-        .limit(1);
+        .or(`phone_number.eq.${enPhone},phone_number.eq.${bnPhone}`)
+        .maybeSingle();
         
       if (error) console.error("Error fetching customer:", error);
       
-      if (data && data.length > 0) {
-        setCustomerInfo(data[0]);
-        setName(data[0].name);
-        setTotalMatches(data[0].total_matches || 0);
+      if (data) {
+        setCustomerInfo(data);
+        setName(data.name);
+        setTotalMatches(data.total_matches || 0);
         setIsExistingCustomer(true);
       } else {
         setCustomerInfo(null);
