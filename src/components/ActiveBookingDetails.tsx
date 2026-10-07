@@ -34,9 +34,9 @@ export const ActiveBookingDetails: React.FC<Props> = ({ booking, slot, duration 
   const renderPaymentIcon = (method?: string | null) => {
     if (!method) return null;
     const normalized = method.toLowerCase().trim();
-    if (normalized === 'bkash') return <BkashIcon size={16} />;
-    if (normalized === 'nagad') return <NagadIcon size={16} />;
-    if (normalized === 'cash') return <Wallet size={16} className="text-gray-500" />;
+    if (normalized === 'bkash') return <BkashIcon size={20} />;
+    if (normalized === 'nagad') return <NagadIcon size={20} />;
+    if (normalized === 'cash') return <Wallet size={20} className="text-gray-500" />;
     
     return <span className="text-sm text-gray-500">({method})</span>;
   };
