@@ -24,13 +24,14 @@ export const ActiveBookingDetails: React.FC<Props> = ({ booking, slot, duration 
 
   const toBn = (num: number | string) => num.toString().replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[parseInt(d)]);
 
-  const renderPaymentIcon = (method?: string) => {
+  const renderPaymentIcon = (method?: string | null) => {
     if (!method) return null;
-    const lowerMethod = method.toLowerCase();
-    if (lowerMethod === 'bkash') return <BkashIcon size={16} />;
-    if (lowerMethod === 'nagad') return <NagadIcon size={16} />;
-    if (lowerMethod === 'cash') return <Wallet size={16} className="text-gray-500" />;
-    return null;
+    const normalized = method.toLowerCase().trim();
+    if (normalized === 'bkash') return <BkashIcon size={16} />;
+    if (normalized === 'nagad') return <NagadIcon size={16} />;
+    if (normalized === 'cash') return <Wallet size={16} className="text-gray-500" />;
+    
+    return <span className="text-sm text-gray-500">({method})</span>;
   };
 
   const handleTimeUpdate = async (type: 'actual_check_in' | 'actual_check_out') => {
@@ -262,8 +263,7 @@ export const ActiveBookingDetails: React.FC<Props> = ({ booking, slot, duration 
                     {booking.total_price > booking.advance_paid && (
                       <div className="flex justify-between text-gray-600 border-b border-gray-200 pb-2">
                         <span>বাকি গ্রহণ:</span>
-                        <span className="flex items-center gap-1.5">
-                          {renderPaymentIcon((booking as any).due_payment_method)}
+                        <span>
                           ৳{toBn(booking.total_price - booking.advance_paid)}
                         </span>
                       </div>
