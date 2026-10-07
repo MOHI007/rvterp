@@ -83,22 +83,19 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selecte
       const { data, error } = await supabase
         .from('customers')
         .select('*')
-        .or(`phone_number.eq.${phone},phone_number.eq.${enPhone},phone_number.eq.${bnPhone}`)
+        .in('phone_number', [phone, enPhone, bnPhone])
         .limit(1);
         
       if (error) console.error("Error fetching customer:", error);
       
       if (data && data.length > 0) {
         setCustomerInfo(data[0]);
-        // Update name if user changed phone OR if the name was somehow empty
-        if (phone !== initialPhone || !name) {
-          setName(data[0].name);
-        }
+        setName(data[0].name);
         setTotalMatches(data[0].total_matches || 0);
         setIsExistingCustomer(true);
       } else {
         setCustomerInfo(null);
-        if (phone === initialPhone && primaryBooking) {
+        if (primaryBooking && phone === initialPhone) {
           // DO NOT wipe name, keep existing
           setIsExistingCustomer(true);
         } else {
@@ -109,7 +106,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selecte
       }
     };
     fetchCustomer();
-  }, [phone, primaryBooking, initialPhone, initialName, name]);
+  }, [phone, primaryBooking, initialPhone, initialName]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
