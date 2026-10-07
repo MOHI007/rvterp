@@ -30,7 +30,7 @@ export const Receipt: React.FC<ReceiptProps> = ({ booking, duration = 1 }) => {
 
   const toBn = (num: number | string) => num.toString().replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[parseInt(d)]);
 
-  const netTotal = booking.total_price - booking.discount;
+  const netTotal = booking.total_price - (booking.discount || 0);
 
   const ReceiptBlock = ({ title }: { title: string }) => (
     <div className="text-black text-sm pb-2 pt-1 font-sans">
@@ -67,7 +67,7 @@ export const Receipt: React.FC<ReceiptProps> = ({ booking, duration = 1 }) => {
         </div>
         <div className="flex justify-between text-gray-700">
           <span>ছাড়:</span>
-          <span>- ৳{toBn(booking.discount)}</span>
+          <span>- ৳{toBn(booking.discount || 0)}</span>
         </div>
         <div className="flex justify-between border-t border-dashed border-gray-400 pt-0.5 mt-0.5">
           <span>সর্বমোট:</span>

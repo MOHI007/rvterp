@@ -113,7 +113,6 @@ export const ActiveBookingDetails: React.FC<Props> = ({ booking, slot, duration 
   const isCompleted = booking.actual_check_in && booking.actual_check_out;
 
   const basePrice = (booking.total_price || 0) + (booking.discount || 0);
-  const methodT = { cash: 'ক্যাশ', bkash: 'বিকাশ', nagad: 'নগদ' };
 
   return (
     <>
