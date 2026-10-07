@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { X, Clock, User, Phone, Play, Square, AlertCircle, CheckCircle2, Printer } from 'lucide-react';
+import { X, Clock, User, Phone, Play, Square, AlertCircle, CheckCircle2, Printer, Wallet } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { type Booking, type Slot } from '../types';
 import { PaymentModal } from './PaymentModal';
 import { Receipt } from './Receipt';
 import { MessageButtons } from './MessageButtons';
+import { BkashIcon } from './icons/BkashIcon';
+import { NagadIcon } from './icons/NagadIcon';
 
 interface Props {
   booking: Booking;
@@ -22,17 +24,26 @@ export const ActiveBookingDetails: React.FC<Props> = ({ booking, slot, duration 
 
   const toBn = (num: number | string) => num.toString().replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[parseInt(d)]);
 
+  const renderPaymentIcon = (method?: string) => {
+    if (!method) return null;
+    const lowerMethod = method.toLowerCase();
+    if (lowerMethod === 'bkash') return <BkashIcon size={16} />;
+    if (lowerMethod === 'nagad') return <NagadIcon size={16} />;
+    if (lowerMethod === 'cash') return <Wallet size={16} className="text-gray-500" />;
+    return null;
+  };
+
   const handleTimeUpdate = async (type: 'actual_check_in' | 'actual_check_out') => {
     setIsUpdatingTime(true);
-    
+
     // Get current time in HH:mm:ss format (Local Time)
     const now = new Date();
     const timeStr = now.toTimeString().split(' ')[0];
 
     try {
-      const payload: any = { 
-        [type]: timeStr, 
-        status: type === 'actual_check_out' ? 'completed' : 'confirmed' 
+      const payload: any = {
+        [type]: timeStr,
+        status: type === 'actual_check_out' ? 'completed' : 'confirmed'
       };
 
       if (type === 'actual_check_out') {
@@ -65,7 +76,7 @@ export const ActiveBookingDetails: React.FC<Props> = ({ booking, slot, duration 
 
   const handleCancelAndCredit = async () => {
     if (!window.confirm("আপনি কি নিশ্চিত যে বুকিং বাতিল করে অগ্রিম টাকা গ্রাহকের ক্রেডিটে জমা করতে চান?")) return;
-    
+
     setIsUpdatingTime(true);
     try {
       const { data, error } = await supabase.functions.invoke('cancel-booking', {
@@ -100,10 +111,10 @@ export const ActiveBookingDetails: React.FC<Props> = ({ booking, slot, duration 
     <>
       <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-center">
         <div className="w-full max-w-md bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom-full duration-300 no-print">
-          
+
           <div className={`p-4 text-white flex justify-between items-center transition-colors ${isInPlay ? 'bg-green-600' : isCompleted ? 'bg-gray-800' : 'bg-gradient-to-r from-brand-orange to-brand-amber'}`}>
             <h2 className="text-xl font-bold flex items-center gap-2">
-              <Clock size={20} /> 
+              <Clock size={20} />
               {isInPlay ? 'চলমান ম্যাচ' : isCompleted ? 'ম্যাচ সম্পন্ন' : 'বুকিং বিস্তারিত'}
             </h2>
             <button onClick={onClose} className="p-1 hover:bg-white/20 rounded-full transition-colors">
@@ -112,7 +123,7 @@ export const ActiveBookingDetails: React.FC<Props> = ({ booking, slot, duration 
           </div>
 
           <div className="p-5 space-y-6 max-h-[85vh] overflow-y-auto">
-            
+
             {/* Customer Info */}
             <div className="bg-gray-50 border border-gray-100 p-4 rounded-2xl flex items-center gap-4">
               <div className="bg-brand-orange/10 p-3 rounded-full text-brand-orange shrink-0">
@@ -129,9 +140,9 @@ export const ActiveBookingDetails: React.FC<Props> = ({ booking, slot, duration 
             {/* Timing Section */}
             <div>
               <h4 className="font-bold text-gray-700 mb-3 flex items-center gap-2">
-                <Clock size={18} className="text-brand-orange"/> সময় ট্র্যাকিং
+                <Clock size={18} className="text-brand-orange" /> সময় ট্র্যাকিং
               </h4>
-              
+
               <div className="grid grid-cols-2 gap-3 mb-4">
                 <div className="bg-gray-50 border border-gray-200 p-3 rounded-2xl text-center">
                   <p className="text-xs text-gray-500 font-bold mb-1">নির্ধারিত সময়</p>
@@ -142,7 +153,7 @@ export const ActiveBookingDetails: React.FC<Props> = ({ booking, slot, duration 
                       const [startHStr, startMStr] = slot.startTime.split(':');
                       let startH = parseInt(startHStr);
                       const endH = (startH + duration) % 24;
-                      
+
                       const formatH = (h: number) => {
                         const period = h >= 12 ? 'PM' : 'AM';
                         let hr = h % 12 || 12;
@@ -159,29 +170,27 @@ export const ActiveBookingDetails: React.FC<Props> = ({ booking, slot, duration 
               </div>
 
               <div className="flex gap-3">
-                <button 
+                <button
                   disabled={!!booking.actual_check_in || isUpdatingTime}
                   onClick={() => handleTimeUpdate('actual_check_in')}
-                  className={`flex-1 py-3 rounded-xl font-bold flex flex-col items-center justify-center gap-1 transition-all border ${
-                    booking.actual_check_in 
-                      ? 'bg-green-50 border-green-200 text-green-700 opacity-100' 
+                  className={`flex-1 py-3 rounded-xl font-bold flex flex-col items-center justify-center gap-1 transition-all border ${booking.actual_check_in
+                      ? 'bg-green-50 border-green-200 text-green-700 opacity-100'
                       : 'bg-white border-gray-200 text-gray-700 hover:border-green-500 hover:text-green-600 shadow-sm active:scale-95'
-                  }`}
+                    }`}
                 >
                   <Play size={20} className={booking.actual_check_in ? 'text-green-500' : ''} />
                   <span>{booking.actual_check_in ? formatTimeStr(booking.actual_check_in) : isUpdatingTime ? 'অপেক্ষা করুন...' : 'চেক-ইন'}</span>
                 </button>
 
-                <button 
+                <button
                   disabled={!booking.actual_check_in || !!booking.actual_check_out || isUpdatingTime}
                   onClick={() => handleTimeUpdate('actual_check_out')}
-                  className={`flex-1 py-3 rounded-xl font-bold flex flex-col items-center justify-center gap-1 transition-all border ${
-                    booking.actual_check_out 
-                      ? 'bg-red-50 border-red-200 text-red-700 opacity-100' 
-                      : !booking.actual_check_in 
+                  className={`flex-1 py-3 rounded-xl font-bold flex flex-col items-center justify-center gap-1 transition-all border ${booking.actual_check_out
+                      ? 'bg-red-50 border-red-200 text-red-700 opacity-100'
+                      : !booking.actual_check_in
                         ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'
                         : 'bg-white border-gray-200 text-gray-700 hover:border-red-500 hover:text-red-600 shadow-sm active:scale-95'
-                  }`}
+                    }`}
                 >
                   <Square size={20} className={booking.actual_check_out ? 'text-red-500' : ''} />
                   <span>{booking.actual_check_out ? formatTimeStr(booking.actual_check_out) : isUpdatingTime ? 'অপেক্ষা করুন...' : 'চেক-আউট'}</span>
@@ -191,10 +200,10 @@ export const ActiveBookingDetails: React.FC<Props> = ({ booking, slot, duration 
               {(!booking.actual_check_out && booking.actual_check_in) && (
                 <div className="mt-4 animate-in slide-in-from-top-2">
                   <label className="block text-xs font-bold text-gray-500 mb-1">মন্তব্য (ঐচ্ছিক)</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     placeholder="ওভারটাইম বা অন্য কোনো কারণ..."
-                    value={checkoutNote} 
+                    value={checkoutNote}
                     onChange={(e) => setCheckoutNote(e.target.value)}
                     className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-orange outline-none font-medium text-sm transition-all"
                   />
@@ -207,9 +216,9 @@ export const ActiveBookingDetails: React.FC<Props> = ({ booking, slot, duration 
             {/* Financials Section */}
             <div>
               <h4 className="font-bold text-gray-700 mb-3 flex items-center gap-2">
-                <AlertCircle size={18} className="text-brand-orange"/> বিল বিবরণী
+                <AlertCircle size={18} className="text-brand-orange" /> বিল বিবরণী
               </h4>
-              
+
               <div className="bg-gray-50 p-4 rounded-2xl border border-gray-200 space-y-2 text-sm font-semibold">
                 {(booking.discount || 0) > 0 && (
                   <>
@@ -229,13 +238,9 @@ export const ActiveBookingDetails: React.FC<Props> = ({ booking, slot, duration 
                 </div>
                 <div className="flex justify-between text-gray-600 border-b border-gray-200 pb-2">
                   <span>অগ্রিম গ্রহণ:</span>
-                  <span>
+                  <span className="flex items-center gap-1.5">
+                    {booking.advance_paid > 0 && renderPaymentIcon(booking.payment_method)}
                     ৳{toBn(booking.advance_paid)}
-                    {booking.advance_paid > 0 && booking.payment_method && (
-                      <span className="text-sm ml-1 text-gray-500">
-                        ({methodT[booking.payment_method as keyof typeof methodT] || booking.payment_method})
-                      </span>
-                    )}
                   </span>
                 </div>
 
@@ -245,7 +250,7 @@ export const ActiveBookingDetails: React.FC<Props> = ({ booking, slot, duration 
                       <span>বকেয়া:</span>
                       <span>৳{toBn(booking.due_amount)}</span>
                     </div>
-                    <button 
+                    <button
                       onClick={() => setShowPayment(true)}
                       className="w-full mt-4 py-3 bg-gray-800 text-white rounded-xl font-bold active:scale-95 transition-transform"
                     >
@@ -257,13 +262,9 @@ export const ActiveBookingDetails: React.FC<Props> = ({ booking, slot, duration 
                     {booking.total_price > booking.advance_paid && (
                       <div className="flex justify-between text-gray-600 border-b border-gray-200 pb-2">
                         <span>বাকি গ্রহণ:</span>
-                        <span>
+                        <span className="flex items-center gap-1.5">
+                          {renderPaymentIcon((booking as any).due_payment_method)}
                           ৳{toBn(booking.total_price - booking.advance_paid)}
-                          {(booking as any).due_payment_method && (
-                            <span className="text-sm ml-1 text-gray-500">
-                              ({methodT[(booking as any).due_payment_method as keyof typeof methodT] || (booking as any).due_payment_method})
-                            </span>
-                          )}
                         </span>
                       </div>
                     )}
@@ -274,11 +275,11 @@ export const ActiveBookingDetails: React.FC<Props> = ({ booking, slot, duration 
                   </>
                 )}
               </div>
-              
+
               <div className="mt-5 space-y-3">
                 <MessageButtons booking={booking} slot={slot} />
-                
-                <button 
+
+                <button
                   onClick={handleCancelAndCredit}
                   disabled={isUpdatingTime}
                   className="w-full py-3 bg-red-50 text-red-600 border border-red-200 rounded-xl font-bold active:scale-95 transition-transform flex justify-center items-center gap-2 disabled:opacity-50"
@@ -286,7 +287,7 @@ export const ActiveBookingDetails: React.FC<Props> = ({ booking, slot, duration 
                   {isUpdatingTime ? 'অপেক্ষা করুন...' : 'বুকিং বাতিল ও ক্রেডিট সেভ'}
                 </button>
 
-                <button 
+                <button
                   onClick={handlePrint}
                   className="w-full py-3 bg-gray-100 text-gray-800 border border-gray-200 rounded-xl font-bold active:scale-95 transition-transform flex justify-center items-center gap-2"
                 >
@@ -299,13 +300,13 @@ export const ActiveBookingDetails: React.FC<Props> = ({ booking, slot, duration 
         </div>
 
         {showPayment && (
-          <PaymentModal 
-            booking={booking} 
-            onClose={() => setShowPayment(false)} 
+          <PaymentModal
+            booking={booking}
+            onClose={() => setShowPayment(false)}
             onSuccess={() => {
               setShowPayment(false);
               onRefresh(); // Refresh parent to get updated due amount
-            }} 
+            }}
           />
         )}
       </div>
