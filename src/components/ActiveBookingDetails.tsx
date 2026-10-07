@@ -93,6 +93,9 @@ export const ActiveBookingDetails: React.FC<Props> = ({ booking, slot, duration 
   const isInPlay = booking.actual_check_in && !booking.actual_check_out;
   const isCompleted = booking.actual_check_in && booking.actual_check_out;
 
+  const basePrice = (booking.total_price || 0) + (booking.discount || 0);
+  const methodT = { cash: 'ক্যাশ', bkash: 'বিকাশ', nagad: 'নগদ' };
+
   return (
     <>
       <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-center">
@@ -208,13 +211,27 @@ export const ActiveBookingDetails: React.FC<Props> = ({ booking, slot, duration 
               </h4>
               
               <div className="bg-gray-50 p-4 rounded-2xl border border-gray-200 space-y-2 text-sm font-semibold">
+                {(booking.discount || 0) > 0 && (
+                  <>
+                    <div className="flex justify-between text-gray-600">
+                      <span>মূল ভাড়া:</span>
+                      <span>৳{toBn(basePrice)}</span>
+                    </div>
+                    <div className="flex justify-between text-gray-600">
+                      <span>ছাড়:</span>
+                      <span>৳{toBn(booking.discount || 0)}</span>
+                    </div>
+                  </>
+                )}
                 <div className="flex justify-between text-gray-600">
                   <span>মোট বিল:</span>
                   <span>৳{toBn(booking.total_price)}</span>
                 </div>
                 <div className="flex justify-between text-gray-600 border-b border-gray-200 pb-2">
                   <span>অগ্রিম গ্রহণ:</span>
-                  <span>৳{toBn(booking.advance_paid)}</span>
+                  <span>
+                    ৳{toBn(booking.advance_paid)} {booking.advance_paid > 0 && booking.payment_method ? `(${methodT[booking.payment_method as keyof typeof methodT] || booking.payment_method})` : ''}
+                  </span>
                 </div>
 
                 {booking.due_amount > 0 ? (
