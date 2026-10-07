@@ -231,9 +231,9 @@ export const ActiveBookingDetails: React.FC<Props> = ({ booking, slot, duration 
                   <span>অগ্রিম গ্রহণ:</span>
                   <span>
                     ৳{toBn(booking.advance_paid)}
-                    {booking.advance_paid > 0 && booking.payment_method && (
+                    {booking.advance_paid > 0 && (booking as any).payment_method && (
                       <span className="text-sm ml-1 text-gray-500">
-                        ({methodT[booking.payment_method as keyof typeof methodT] || booking.payment_method})
+                        ({methodT[(booking as any).payment_method as keyof typeof methodT] || (booking as any).payment_method})
                       </span>
                     )}
                   </span>
