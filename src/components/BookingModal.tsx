@@ -16,9 +16,11 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selecte
   const { settings, user } = useAuth();
   
   const primaryBooking = existingGroupBookings?.[0];
+  const initialPhone = primaryBooking?.customer_phone || '';
+  const initialName = primaryBooking?.customers?.name || '';
   
-  const [phone, setPhone] = useState(primaryBooking?.customer_phone || '');
-  const [name, setName] = useState(primaryBooking?.customers?.name || '');
+  const [phone, setPhone] = useState(initialPhone);
+  const [name, setName] = useState(initialName);
   const [customerInfo, setCustomerInfo] = useState<Customer | null>(null);
   const [totalMatches, setTotalMatches] = useState(0);
   const [isExistingCustomer, setIsExistingCustomer] = useState(false);
@@ -57,13 +59,14 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selecte
   const dueAmount = Math.max(0, netAmount - (parseInt(advance) || 0));
 
   const toBn = (num: number | string) => num.toString().replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[parseInt(d)]);
+  const toBnDigits = (str: string) => str.replace(/[0-9]/g, d => '০১২৩৪৫৬৭৮৯'[parseInt(d)]);
   const toEnglishDigits = (str: string) => str.replace(/[০-৯]/g, (d) => '০১২৩৪৫৬৭৮৯'.indexOf(d).toString());
 
   // Auto-lookup customer
   useEffect(() => {
     if (phone.length !== 11) {
-      if (primaryBooking && phone === primaryBooking.customer_phone) {
-        setName(primaryBooking.customers?.name || '');
+      if (phone === initialPhone && primaryBooking) {
+        setName(initialName);
         setIsExistingCustomer(true);
       } else {
         setName('');
@@ -76,23 +79,27 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selecte
 
     const fetchCustomer = async () => {
       const enPhone = toEnglishDigits(phone);
+      const bnPhone = toBnDigits(phone);
       const { data, error } = await supabase
         .from('customers')
         .select('*')
-        .or(`phone_number.eq.${phone},phone_number.eq.${enPhone}`)
+        .or(`phone_number.eq.${phone},phone_number.eq.${enPhone},phone_number.eq.${bnPhone}`)
         .limit(1);
         
       if (error) console.error("Error fetching customer:", error);
       
       if (data && data.length > 0) {
         setCustomerInfo(data[0]);
-        setName(data[0].name);
+        // Update name if user changed phone OR if the name was somehow empty
+        if (phone !== initialPhone || !name) {
+          setName(data[0].name);
+        }
         setTotalMatches(data[0].total_matches || 0);
         setIsExistingCustomer(true);
       } else {
         setCustomerInfo(null);
-        if (primaryBooking && phone === primaryBooking.customer_phone) {
-          setName(primaryBooking.customers?.name || '');
+        if (phone === initialPhone && primaryBooking) {
+          // DO NOT wipe name, keep existing
           setIsExistingCustomer(true);
         } else {
           setName('');
@@ -102,7 +109,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selecte
       }
     };
     fetchCustomer();
-  }, [phone, primaryBooking]);
+  }, [phone, primaryBooking, initialPhone, initialName, name]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
