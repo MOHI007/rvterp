@@ -79,21 +79,23 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selecte
     }
 
     const fetchCustomer = async () => {
-      const enPhone = normalizedNumber;
-      const bnPhone = toBnDigits(phone);
+      console.log("Looking up:", normalizedNumber);
       
       const { data, error } = await supabase
         .from('customers')
         .select('*')
-        .or(`phone_number.eq.${enPhone},phone_number.eq.${bnPhone}`)
+        .ilike('phone_number', `%${normalizedNumber}%`)
+        .limit(1)
         .maybeSingle();
         
+      console.log("DB Response:", data, "DB Error:", error);
+      
       if (error) console.error("Error fetching customer:", error);
       
       if (data) {
         setCustomerInfo(data);
-        setName(data.name);
-        setTotalMatches(data.total_matches || 0);
+        setName(data?.name || '');
+        setTotalMatches(data?.total_matches || 0);
         setIsExistingCustomer(true);
       } else {
         setCustomerInfo(null);
