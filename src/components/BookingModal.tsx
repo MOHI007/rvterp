@@ -57,20 +57,25 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selecte
   const dueAmount = Math.max(0, netAmount - (parseInt(advance) || 0));
 
   const toBn = (num: number | string) => num.toString().replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[parseInt(d)]);
-  const toEn = (str: string) => str.replace(/[০-৯]/g, d => '0123456789'['০১২৩৪৫৬৭৮৯'.indexOf(d)]);
+  const toEnglishDigits = (str: string) => str.replace(/[০-৯]/g, (d) => '০১২৩৪৫৬৭৮৯'.indexOf(d).toString());
 
   // Auto-lookup customer
   useEffect(() => {
     if (phone.length !== 11) {
-      setName('');
+      if (primaryBooking && phone === primaryBooking.customer_phone) {
+        setName(primaryBooking.customers?.name || '');
+        setIsExistingCustomer(true);
+      } else {
+        setName('');
+        setIsExistingCustomer(false);
+      }
       setTotalMatches(0);
-      setIsExistingCustomer(false);
       setCustomerInfo(null);
       return;
     }
 
     const fetchCustomer = async () => {
-      const enPhone = toEn(phone);
+      const enPhone = toEnglishDigits(phone);
       const { data, error } = await supabase
         .from('customers')
         .select('*')
@@ -86,13 +91,18 @@ export const BookingModal: React.FC<BookingModalProps> = ({ initialSlot, selecte
         setIsExistingCustomer(true);
       } else {
         setCustomerInfo(null);
-        setName('');
+        if (primaryBooking && phone === primaryBooking.customer_phone) {
+          setName(primaryBooking.customers?.name || '');
+          setIsExistingCustomer(true);
+        } else {
+          setName('');
+          setIsExistingCustomer(false);
+        }
         setTotalMatches(0);
-        setIsExistingCustomer(false);
       }
     };
     fetchCustomer();
-  }, [phone]);
+  }, [phone, primaryBooking]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
