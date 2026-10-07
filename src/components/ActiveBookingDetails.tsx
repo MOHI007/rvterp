@@ -24,6 +24,13 @@ export const ActiveBookingDetails: React.FC<Props> = ({ booking, slot, duration 
 
   const toBn = (num: number | string) => num.toString().replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[parseInt(d)]);
 
+  // Extract payment methods from joined payments array if available
+  const advancePayment = (booking as any).payments?.find((p: any) => p.type === 'Advance');
+  const advanceMethod = advancePayment?.method || (booking as any).payment_method;
+
+  const duePayment = (booking as any).payments?.find((p: any) => p.type === 'Due');
+  const dueMethod = duePayment?.method || (booking as any).due_payment_method;
+
   const renderPaymentIcon = (method?: string | null) => {
     if (!method) return null;
     const normalized = method.toLowerCase().trim();
@@ -240,7 +247,9 @@ export const ActiveBookingDetails: React.FC<Props> = ({ booking, slot, duration 
                 <div className="flex justify-between text-gray-600 border-b border-gray-200 pb-2">
                   <span>অগ্রিম গ্রহণ:</span>
                   <span className="flex items-center gap-1.5">
-                    {booking.advance_paid > 0 && renderPaymentIcon(booking.payment_method)}
+                    {booking.advance_paid > 0 ? (
+                      advanceMethod ? renderPaymentIcon(advanceMethod) : <span className="text-[10px] text-red-500 border border-red-200 bg-red-50 px-1 rounded">No Method</span>
+                    ) : null}
                     ৳{toBn(booking.advance_paid)}
                   </span>
                 </div>
@@ -263,7 +272,8 @@ export const ActiveBookingDetails: React.FC<Props> = ({ booking, slot, duration 
                     {booking.total_price > booking.advance_paid && (
                       <div className="flex justify-between text-gray-600 border-b border-gray-200 pb-2">
                         <span>বাকি গ্রহণ:</span>
-                        <span>
+                        <span className="flex items-center gap-1.5">
+                          {dueMethod && renderPaymentIcon(dueMethod)}
                           ৳{toBn(booking.total_price - booking.advance_paid)}
                         </span>
                       </div>

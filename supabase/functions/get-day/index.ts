@@ -31,7 +31,7 @@ serve(async (req) => {
 
     const { data, error } = await supabaseClient
       .from('bookings')
-      .select('*, customers(*)')
+      .select('*, customers(*), payments(*)')
       .eq('date', date)
       .neq('status', 'cancelled');
 
