@@ -230,7 +230,12 @@ export const ActiveBookingDetails: React.FC<Props> = ({ booking, slot, duration 
                 <div className="flex justify-between text-gray-600 border-b border-gray-200 pb-2">
                   <span>অগ্রিম গ্রহণ:</span>
                   <span>
-                    ৳{toBn(booking.advance_paid)} {booking.advance_paid > 0 && booking.payment_method ? `(${methodT[booking.payment_method as keyof typeof methodT] || booking.payment_method})` : ''}
+                    ৳{toBn(booking.advance_paid)}
+                    {booking.advance_paid > 0 && booking.payment_method && (
+                      <span className="text-sm ml-1 text-gray-500">
+                        ({methodT[booking.payment_method as keyof typeof methodT] || booking.payment_method})
+                      </span>
+                    )}
                   </span>
                 </div>
 
@@ -248,10 +253,25 @@ export const ActiveBookingDetails: React.FC<Props> = ({ booking, slot, duration 
                     </button>
                   </>
                 ) : (
-                  <div className="flex justify-between items-center text-green-600 pt-2 text-lg">
-                    <span className="flex items-center gap-1"><CheckCircle2 size={20}/> সম্পূর্ণ পরিশোধিত</span>
-                    <span>৳০</span>
-                  </div>
+                  <>
+                    {booking.total_price > booking.advance_paid && (
+                      <div className="flex justify-between text-gray-600 border-b border-gray-200 pb-2">
+                        <span>বাকি গ্রহণ:</span>
+                        <span>
+                          ৳{toBn(booking.total_price - booking.advance_paid)}
+                          {(booking as any).due_payment_method && (
+                            <span className="text-sm ml-1 text-gray-500">
+                              ({methodT[(booking as any).due_payment_method as keyof typeof methodT] || (booking as any).due_payment_method})
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex justify-between items-center text-green-600 pt-2 text-lg">
+                      <span className="flex items-center gap-1"><CheckCircle2 size={20}/> সম্পূর্ণ পরিশোধিত</span>
+                      <span>৳০</span>
+                    </div>
+                  </>
                 )}
               </div>
               
