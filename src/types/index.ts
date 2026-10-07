@@ -16,13 +16,14 @@ export interface Booking {
   actual_check_out?: string;
   customer_phone: string;
   total_price: number;
-  discount: number;
+  discount?: number;
   advance_paid: number;
   due_amount: number;
   status: 'confirmed' | 'cancelled' | 'completed';
   note?: string;
   booked_by_role?: 'admin' | 'manager';
   customers?: Customer; // Joined property from Supabase
+  payment_method?: string;
 }
 
 export interface Slot {
